@@ -19,8 +19,7 @@ import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 public class C4Frame_v2_14 extends JFrame {
 
 	private static final long serialVersionUID = 1L;
-	public static final String TITLE = "TD Learning for Connect Four";
-	public static final String VERSION = "v2.14";
+	public static final String TITLE = "Connect Four";
 	
 	private C4Game t_Game;
 
@@ -48,7 +47,7 @@ public class C4Frame_v2_14 extends JFrame {
 //		    }
 //		}
 		
-		final C4Frame_v2_14 t_Frame = new C4Frame_v2_14(TITLE + " " + VERSION);
+		final C4Frame_v2_14 t_Frame = new C4Frame_v2_14(TITLE);
 
 		 t_Frame.init();
 

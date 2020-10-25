@@ -2,9 +2,7 @@ package gui;
 
 import gui.C4Game.Action;
 import gui.C4Game.State;
-import guiOptions.OptionsMCTS;
 import guiOptions.OptionsMinimax;
-import guiOptions.OptionsTD;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -26,8 +24,6 @@ import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
-import nTupleTD.TDParams;
-import mcts.MCTSParams;
 import c4.Agent.AgentState;
 import c4.AlphaBetaAgent;
 import c4.Agent;
@@ -47,8 +43,7 @@ public class C4Buttons extends JPanel {
 
 	C4Game m_game;
 	C4Buttons buttons;
-	private final String agentList[] = { "Human", "Minimax", "TDS", "Random",
-			"Minimax-TDS", "MCTS" };
+	private final String agentList[] = { "Human", "Minimax", "Random" };
 
 	// ==================================================================
 	// Elements
@@ -288,17 +283,8 @@ public class C4Buttons extends JPanel {
 					case 1:
 						m_game.players[0] = m_game.initAlphaBetaAgent(0);
 						break;
-					case 2:
-						m_game.players[0] = m_game.initTDSAgent(0);
-						break;
 					case 3:
 						m_game.players[0] = new RandomAgent();
-						break;
-					case 4:
-						m_game.players[0] = m_game.initAlphaBetaTDSAgent(0);
-						break;
-					case 5:
-						m_game.players[0] = m_game.initMCTSAgent(0);
 						break;
 					default:
 						throw new UnsupportedOperationException(
@@ -322,17 +308,8 @@ public class C4Buttons extends JPanel {
 					case 1:
 						m_game.players[1] = m_game.initAlphaBetaAgent(1);
 						break;
-					case 2:
-						m_game.players[1] = m_game.initTDSAgent(1);
-						break;
 					case 3:
 						m_game.players[1] = new RandomAgent();
-						break;
-					case 4:
-						m_game.players[1] = m_game.initAlphaBetaTDSAgent(1);
-						break;
-					case 5:
-						m_game.players[1] = m_game.initMCTSAgent(1);
 						break;
 					default:
 						throw new UnsupportedOperationException(
@@ -356,17 +333,8 @@ public class C4Buttons extends JPanel {
 					case 1:
 						m_game.players[2] = m_game.initAlphaBetaAgent(2);
 						break;
-					case 2:
-						m_game.players[2] = m_game.initTDSAgent(2);
-						break;
 					case 3:
 						m_game.players[2] = new RandomAgent();
-						break;
-					case 4:
-						m_game.players[2] = m_game.initAlphaBetaTDSAgent(2);
-						break;
-					case 5:
-						m_game.players[2] = m_game.initMCTSAgent(2);
 						break;
 					default:
 						throw new UnsupportedOperationException(
@@ -391,18 +359,9 @@ public class C4Buttons extends JPanel {
 						m_game.players[0] = m_game.initAlphaBetaAgent(0);
 						str = "[Init with AB-Agent]";
 						break;
-					case 2:
-						// m_game.players[0] = m_game.initTDSAgent(0);
-						m_game.changeState(State.TRAIN_X);
-						str = "[Train TD-Agent]";
-						break;
 					case 3:
 						m_game.players[0] = new RandomAgent();
 						str = "[Init with Random-Agent]";
-						break;
-					case 4:
-						m_game.players[0] = m_game.initAlphaBetaTDSAgent(0);
-						str = "[Init with AB-TDS-Agent]";
 						break;
 					}
 				printStatus(str);
@@ -422,17 +381,9 @@ public class C4Buttons extends JPanel {
 						m_game.players[1] = m_game.initAlphaBetaAgent(1);
 						str = "[Init with AB-Agent]";
 						break;
-					case 2:
-						m_game.changeState(State.TRAIN_O);
-						str = "[Train TD-Agent]";
-						break;
 					case 3:
 						m_game.players[1] = new RandomAgent();
 						str = "[Init with Random-Agent]";
-						break;
-					case 4:
-						m_game.players[1] = m_game.initAlphaBetaTDSAgent(1);
-						str = "[Init with AB-TDS-Agent]";
 						break;
 					}
 				printStatus(str);
@@ -451,10 +402,6 @@ public class C4Buttons extends JPanel {
 					case 1:
 						m_game.players[2] = m_game.initAlphaBetaAgent(2);
 						str = "[Init with AB-Agent]";
-						break;
-					case 2:
-						m_game.changeState(State.TRAIN_EVAL);
-						str = "[Train TD-Agent]";
 						break;
 					case 3:
 						m_game.players[2] = new RandomAgent();
@@ -743,17 +690,6 @@ public class C4Buttons extends JPanel {
 							OptionsMinimax.class))
 				m_game.params[agent] = new OptionsMinimax(
 						AlphaBetaAgent.TRANSPOSBYTES);
-			break;
-		case 2:
-			if (m_game.params[agent] == null
-					|| !m_game.params[agent].getClass().equals(OptionsTD.class))
-				m_game.params[agent] = new OptionsTD(new TDParams());
-			break;
-		case 5:
-			if (m_game.params[agent] == null
-					|| !m_game.params[agent].getClass().equals(
-							OptionsMCTS.class))
-				m_game.params[agent] = new OptionsMCTS(new MCTSParams());
 			break;
 		case 0:
 		default:

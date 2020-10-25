@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.util.Random;
 import java.util.concurrent.Semaphore;
 
-import nTupleTD.TDSAgent;
 import openingBook.BookSum;
 
 /**
@@ -130,8 +129,6 @@ public class AlphaBetaAgent extends ConnectFour implements Agent, Serializable {
 	// Random Choice for a Move, when more than one equal value
 	// For a loss make a complete random Move;
 	private boolean randomizeLosses = false;
-
-	private TDSAgent tds = null;
 
 	/**
 	 * Generate an empty Board
@@ -2826,9 +2823,6 @@ public class AlphaBetaAgent extends ConnectFour implements Agent, Serializable {
 		long f1 = getMirroredField(PLAYER1);
 		long f2 = getMirroredField(PLAYER2);
 
-		 if (tds != null && countPieces() <= 10)
-			 moves = tds.getBestMoveList(fieldP1, fieldP2);
-		 else
 		// dynamic move-ordering
 		moves = generateMoves(PLAYER1, true);
 
@@ -4317,10 +4311,6 @@ public class AlphaBetaAgent extends ConnectFour implements Agent, Serializable {
 	@Override
 	public void semOpUp() {
 		mutex.release();
-	}
-
-	public void setTDAgent(TDSAgent td) {
-		tds = td;
 	}
 
 	@Override
