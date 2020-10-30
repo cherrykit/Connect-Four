@@ -359,6 +359,7 @@ public class C4Buttons extends JPanel {
 						m_game.players[0] = m_game.initAlphaBetaAgent(0);
 						str = "[Init with AB-Agent]";
 						break;
+					// Sophia: add here for training
 					case 3:
 						m_game.players[0] = new RandomAgent();
 						str = "[Init with Random-Agent]";

@@ -568,6 +568,10 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 		}
 		return alphaBetaStd;
 	}
+	
+	protected Agent trainTDLAgent(int player) {
+		// Sophia: hook this up
+	}
 
 	// ==============================================================
 	// Button: Start Game
