@@ -285,6 +285,9 @@ public class C4Buttons extends JPanel {
 					case 1:
 						m_game.players[0] = m_game.initAlphaBetaAgent(0);
 						break;
+					case 2:
+						m_game.players[0] = m_game.initTDLAgent(0);
+						break;
 					case 3:
 						m_game.players[0] = new RandomAgent();
 						break;
@@ -362,7 +365,7 @@ public class C4Buttons extends JPanel {
 						str = "[Init with AB-Agent]";
 						break;
 					case 2:
-						//m_game.players[0] = m_game.trainTDLAgent(0);
+						// Assumes agent is already initialized
 						str = "[Training TDL Agent]" + m_game.trainTDLAgent(0);
 						break;
 					case 3:
@@ -772,8 +775,7 @@ public class C4Buttons extends JPanel {
 			bTrainO.setEnabled(false);
 			break;
 		case TRAIN_EVAL:
-		case TRAIN_O:
-		case TRAIN_X:
+		case TRAIN:
 		case EVALUATE:
 			cChooseEval.setEnabled(false);
 			bParamsEval.setEnabled(false);

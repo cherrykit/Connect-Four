@@ -80,7 +80,7 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 
 	// Possible states
 	protected enum State {
-		TRAIN_X, TRAIN_O, TRAIN_EVAL, PLAY, COMPETE, MULTICOMPETE, IDLE, SETBOARD, TESTVALUEFUNC, TESTBESTMOVE, SHOWNTUPLE /* unused */, SETNTUPLE, INSPNTUPLE, MULTITRAIN, EVALUATE, SAVE_X, SAVE_O, SAVE_EVAL, LOAD_X, LOAD_O, LOAD_EVAL, SAVE_WEIGHTS_X, SAVE_WEIGHTS_O, SAVE_WEIGHTS_EVAL, LOAD_WEIGHTS_X, LOAD_WEIGHTS_O, LOAD_WEIGHTS_EVAL
+		TRAIN, TRAIN_EVAL, PLAY, COMPETE, MULTICOMPETE, IDLE, SETBOARD, TESTVALUEFUNC, TESTBESTMOVE, SHOWNTUPLE /* unused */, SETNTUPLE, INSPNTUPLE, MULTITRAIN, EVALUATE, SAVE_X, SAVE_O, SAVE_EVAL, LOAD_X, LOAD_O, LOAD_EVAL, SAVE_WEIGHTS_X, SAVE_WEIGHTS_O, SAVE_WEIGHTS_EVAL, LOAD_WEIGHTS_X, LOAD_WEIGHTS_O, LOAD_WEIGHTS_EVAL
 	};
 
 	protected State state = State.IDLE;
@@ -98,6 +98,10 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 	// Players
 	protected Agent[] players = new Agent[3];
 	private int curPlayer;
+	private int winner;
+	
+	private int numTrainingGames;
+	private boolean continueTraining;
 
 	// Agent for the game-theoretic-values (perfect minimax-agent)
 	private Agent GTVab = null;
@@ -220,6 +224,8 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 				min.useDeepBookDist());
 		alphaBetaStd.setDifficulty(min.getSearchDepth());
 		alphaBetaStd.randomizeEqualMoves(min.randomizeEqualMoves());
+		
+		winner = -1;
 	}
 
 	private JPanel initValuePanel() {
@@ -281,7 +287,8 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 	}
 
 	private boolean makeCompleteMove(int x, int player, String sPlayer) {
-		if (!gameOver && c4.getColHeight(x) != 6) {
+		int colheight = c4.getColHeight(x);
+		if (!gameOver && colheight != 6) {
 			checkWin(x, sPlayer);
 			setPiece(x);
 			swapPlayer();
@@ -402,10 +409,12 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 
 	private void checkWin(int player, int x, String sPlayer) {
 		if (c4.canWin(player + 1, x)) {
-			if (sPlayer != null)
+			if (sPlayer != null && state == State.PLAY)
 				new MessageBox(sPlayer + " Win!!       ", "Game Over");
-			else
+			else if (state == State.PLAY)
 				new MessageBox("Game Over!!!", "Game Over");
+			else
+				winner = player;
 			gameOver = true;
 		}
 	}
@@ -571,19 +580,27 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 		return alphaBetaStd;
 	}
 	
-	protected boolean trainTDLAgent(int player) {
-		// Sophia: add actual training here!
+	protected Agent initTDLAgent(int player) {
 		if (params[player] == null
 				|| !params[player].getClass().equals(OptionsTDL.class))
 			params[player] = new OptionsTDL();
 		OptionsTDL min = (OptionsTDL) params[player];
 		boolean trainAgainstMinimax = min.playAgainstMinimax();
+		
+		return new TDLAgent();
+	}
+	
+	protected String trainTDLAgent(int player) {
+		// Init opponent
 		players[0] = alphaBetaStd;
 		players[1] = alphaBetaStd;
-		playGame(true);
-		
-		// do training :)
-		return trainAgainstMinimax;
+		changeState(State.TRAIN);
+		winner = -1;
+		c4Buttons.cbAutostep.setSelected(true);
+		numTrainingGames = 0;
+		continueTraining = true;
+
+		return "Started training";
 	}
 
 	// ==============================================================
@@ -593,9 +610,9 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 		if (newGame) {
 			initPlay();
 		}
-		printValueBar();
+		//printValueBar();
 
-		while (state == State.PLAY) {
+		while (state == State.PLAY || state == State.TRAIN) {
 			// Check for Actions
 			handleAction();
 
@@ -612,28 +629,37 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 					int x = players[curPlayer].getBestMove(c4.getBoard());
 
 					float timeS = (float) ((System.currentTimeMillis() - startTime) / 1000.0);
-					c4Buttons.printStatus("Time needed for move: " + timeS
+					if (state == State.PLAY)
+						c4Buttons.printStatus("Time needed for move: " + timeS
 							+ "s");
 
 					String[] color = { "Yellow", "Red" };
 					String sPlayer = players[curPlayer].getName() + " ("
 							+ color[curPlayer] + ")";
 					makeCompleteMove(x, sPlayer);
-					try {
-						Thread.sleep(100);
-					} catch (Exception e) {
+					if (state == State.PLAY) {
+						try {
+							Thread.sleep(100);
+						} catch (Exception e) {
+						}
 					}
-
-					printValueBar();
+					
+					//printValueBar();
 				}
 			}
-			try {
-				Thread.sleep(100);
-			} catch (Exception e) {
+			else if (gameOver && state == State.TRAIN) {
+				return;
+			}
+			if (state == State.PLAY) {
+				try {
+					Thread.sleep(100);
+				} catch (Exception e) {
+				}
 			}
 
 		}
-		changeState(State.IDLE);
+		if (state == State.PLAY)
+			changeState(State.IDLE);
 	}
 
 	// ==============================================================
@@ -700,6 +726,17 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 			case PLAY:
 				// compareTime();
 				playGame(true);
+				break;
+			case TRAIN:
+				resetBoard();
+				numTrainingGames += 1;
+				c4Buttons.printStatus("Training game " + numTrainingGames);
+				if (numTrainingGames <= 2)
+					playGame(true);
+				else {
+					c4Buttons.printStatus("Finished training!");
+					changeState(State.IDLE);
+				}
 				break;
 			default:
 				break;
