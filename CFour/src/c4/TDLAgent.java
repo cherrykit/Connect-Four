@@ -111,7 +111,6 @@ public class TDLAgent extends ConnectFour implements Agent {
 		}
 		return indices;
 	}
-	
 
 	// Returns whether we should stop training the agent
 	// Evaluates agent and writes the result of each evaluation to a file
@@ -124,8 +123,11 @@ public class TDLAgent extends ConnectFour implements Agent {
 	// Darrel: implement this
 	// bestMove is the column that is best according to the current weights
 	// activeWeights is the vector x_t in the pseudocode when the next move is bestMove
+	// bestMoveValue is the value (r(s_{t+1}) + V(s_{t+1})) of the state resulting from bestMove
+	// check the getBestMove method for how to get the value of the current state 
+	// (between my start and end comments, the correct state should already be initialized)
 	// should modify the weights
-	public int oneTDLIteration(int bestMove, int[] activeWeights) {
+	public int oneTDLIteration(int bestMove, double bestMoveValue, int[] activeWeights) {
 		return bestMove;
 	}	
 	
@@ -154,20 +156,31 @@ public class TDLAgent extends ConnectFour implements Agent {
 		setBoard(table);
 		int[] possibleMoves = generateMoves(false);
 		int[][] moveActiveWeights = new int[possibleMoves.length][weights.length];
-		int[] values = new int[possibleMoves.length];
+		double[] values = new double[possibleMoves.length];
 		for (int i = 0; i < possibleMoves.length; i++) {
 			// calculate vector x for each move
+			
 			putPiece(possibleMoves[i]);
+			
+			// start using this part
 			int[][] boardState = getBoard();
 			int[][] mirroredState = getMirroredField(boardState);
 			moveActiveWeights[i] = getIndices(boardState, mirroredState);
 			
-			removePiece(player, possibleMoves[i]);
-			
 			// calculate dot product for each
-			for (int j = 0; j < weights.length; j++) {
-				values[i] += moveActiveWeights[i][j] * weights[j];
+			if (hasWin(player))
+				values[i] = 1;
+			else if (isDraw())
+				values[i] = 0;
+			else {
+				for (int j = 0; j < weights.length; j++) {
+					values[i] += moveActiveWeights[i][j] * weights[j];
+				}
+				values[i] = Math.tanh(values[i]);
 			}
+			// end using this part
+			
+			removePiece(player, possibleMoves[i]);
 			
 		}
 		// return best one or call TDL iteration with the best one
@@ -178,7 +191,7 @@ public class TDLAgent extends ConnectFour implements Agent {
 		}
 		// call TDL instead when training, pass in the active weights vector as well
 		if (isTraining)
-			return oneTDLIteration(possibleMoves[maxAt], moveActiveWeights[maxAt]);
+			return oneTDLIteration(possibleMoves[maxAt], values[maxAt], moveActiveWeights[maxAt]);
 		return possibleMoves[maxAt];
 	}
 	
