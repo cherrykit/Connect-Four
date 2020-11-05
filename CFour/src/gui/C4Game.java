@@ -3,6 +3,7 @@ package gui;
 import guiOptions.OptionsComp;
 import guiOptions.OptionsMinimax;
 import guiOptions.OptionsMultiTrain;
+import guiOptions.OptionsTDL;
 import guiOptions.OptionsValueFunc;
 
 import java.awt.BorderLayout;
@@ -25,6 +26,7 @@ import openingBook.BookSum;
 import c4.AlphaBetaAgent;
 import c4.ConnectFour;
 import c4.MoveList;
+import c4.TDLAgent;
 import c4.Agent;
 
 /**
@@ -569,8 +571,19 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 		return alphaBetaStd;
 	}
 	
-	protected Agent trainTDLAgent(int player) {
-		// Sophia: hook this up
+	protected boolean trainTDLAgent(int player) {
+		// Sophia: add actual training here!
+		if (params[player] == null
+				|| !params[player].getClass().equals(OptionsTDL.class))
+			params[player] = new OptionsTDL();
+		OptionsTDL min = (OptionsTDL) params[player];
+		boolean trainAgainstMinimax = min.playAgainstMinimax();
+		players[0] = alphaBetaStd;
+		players[1] = alphaBetaStd;
+		playGame(true);
+		
+		// do training :)
+		return trainAgainstMinimax;
 	}
 
 	// ==============================================================
@@ -678,10 +691,10 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 		while (true) {
 			// Deactivate most menu-items (except File and Help) for the
 			// different states
-			c4Menu.setEnabledMenus(new int[] { 1, 2, 3 }, false);
+			c4Menu.setEnabledMenus(new int[] { 1 }, false);
 			switch (state) {
 			case IDLE:
-				c4Menu.setEnabledMenus(new int[] { 1, 2, 3 }, true);
+				c4Menu.setEnabledMenus(new int[] { 1 }, true);
 				action = Action.NOACTION;
 				break;
 			case PLAY:

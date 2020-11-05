@@ -3,6 +3,8 @@ package gui;
 import gui.C4Game.Action;
 import gui.C4Game.State;
 import guiOptions.OptionsMinimax;
+import guiOptions.OptionsTDL;
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -43,7 +45,7 @@ public class C4Buttons extends JPanel {
 
 	C4Game m_game;
 	C4Buttons buttons;
-	private final String agentList[] = { "Human", "Minimax", "Random" };
+	private final String agentList[] = { "Human", "Minimax", "TDLAgent", "Random" };
 
 	// ==================================================================
 	// Elements
@@ -359,7 +361,10 @@ public class C4Buttons extends JPanel {
 						m_game.players[0] = m_game.initAlphaBetaAgent(0);
 						str = "[Init with AB-Agent]";
 						break;
-					// Sophia: add here for training
+					case 2:
+						//m_game.players[0] = m_game.trainTDLAgent(0);
+						str = "[Training TDL Agent]" + m_game.trainTDLAgent(0);
+						break;
 					case 3:
 						m_game.players[0] = new RandomAgent();
 						str = "[Init with Random-Agent]";
@@ -691,6 +696,11 @@ public class C4Buttons extends JPanel {
 							OptionsMinimax.class))
 				m_game.params[agent] = new OptionsMinimax(
 						AlphaBetaAgent.TRANSPOSBYTES);
+			break;
+		case 2:
+			if (m_game.params[agent] == null || !m_game.params[agent].getClass().equals(
+					OptionsTDL.class))
+				m_game.params[agent] = new OptionsTDL();
 			break;
 		case 0:
 		default:

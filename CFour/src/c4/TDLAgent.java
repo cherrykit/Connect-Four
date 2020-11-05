@@ -7,6 +7,20 @@ public class TDLAgent extends ConnectFour implements Agent {
 	
 	// save weights as field here
 
+	// Returns whether we should stop training the agent
+	// Evaluates agent and writes the result of each evaluation to a file
+	// Ethan: implement this
+	public boolean evaluateAgent(TDLAgent agent) {
+		return false;
+	}
+	
+	// one iteration of TDL
+	// Darrel: implement this
+	// maybe the agent needs to know if it's the first or second player
+	// can use methods of TDLAgent to retrieve the best move at one point.
+	public void oneTDLIteration(TDLAgent agent) {
+		
+	}	
 	
 	/**
 	 * Generate an empty Board
