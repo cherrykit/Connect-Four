@@ -587,13 +587,18 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 		OptionsTDL min = (OptionsTDL) params[player];
 		boolean trainAgainstMinimax = min.playAgainstMinimax();
 		
-		return new TDLAgent();
+		return new TDLAgent(trainAgainstMinimax, false, 0);
 	}
 	
 	protected String trainTDLAgent(int player) {
+		TDLAgent curAgent = (TDLAgent) players[player];
 		// Init opponent
-		players[0] = alphaBetaStd;
-		players[1] = alphaBetaStd;
+		if (curAgent.trainAgainstMinimax) {
+			players[1] = alphaBetaStd;
+		} else {
+			players[1] = new TDLAgent(false, true, 1);
+		}
+		curAgent.isTraining = true;
 		changeState(State.TRAIN);
 		winner = -1;
 		c4Buttons.cbAutostep.setSelected(true);
