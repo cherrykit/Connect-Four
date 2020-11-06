@@ -1,6 +1,7 @@
 package c4;
 
 import java.util.Arrays;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class TDLAgent extends ConnectFour implements Agent {
 	
@@ -8,6 +9,7 @@ public class TDLAgent extends ConnectFour implements Agent {
 	public int player; // 0 for first player, 1 for second player
 	public boolean trainAgainstMinimax;
 	public boolean isTraining;
+	private double epsilon = 0.1;
 	
 	// n-tuples
 	private int[][] nTuples = {
@@ -79,7 +81,7 @@ public class TDLAgent extends ConnectFour implements Agent {
 	// save weights as field here
 	// we have 65536 weights for each tuple and 68 tuples
 	// total of 4,456,448 weights
-	private int[] weights = new int[4456448];
+	private double[] weights = new double[4456448];
 	
 	private int[] getIndices(int[][] state1, int[][] state2) {
 		int[] indices = new int[weights.length];
@@ -126,6 +128,45 @@ public class TDLAgent extends ConnectFour implements Agent {
 	// (between my start and end comments, the correct state should already be initialized)
 	// should modify the weights
 	public int oneTDLIteration(int bestMove, double bestMoveValue, int[] activeWeights) {
+		//epsilon greedy
+		double e = ThreadLocalRandom.current().nextDouble();
+		if (e < epsilon){
+			int[] possibleMoves = generateMoves(false);
+			int randomMove = ThreadLocalRandom.current().nextInt(0,possibleMoves.length);
+			return possibleMoves[randomMove];
+		}
+
+		//initializing values
+		int reward = canWin(bestMove) ? 1 : 0;
+		double nextValue = 0;
+
+		/*double currentValue = 0;
+		//getting the value for the current board state
+		for (int i = 0; i < weights.length; i++) {
+			currentValue += activeWeights[i] * weights[i];
+		}
+		currentValue = Math.tanh(currentValue);
+		*/
+
+		//getting the indices array for the next board state
+		putPiece(bestMove);
+		int[][] boardState = getBoard();
+		int[][] mirroredState = getMirroredField(boardState);
+		int[] nextActiveWeights = getIndices(boardState, mirroredState);
+		removePiece(player, bestMove);
+
+		//getting the value for the next board state
+		for (int i = 0; i < nextActiveWeights.length; i++) {
+			nextValue += nextActiveWeights[i] * weights[i];
+		}
+		nextValue = Math.tanh(nextValue);
+
+		//update weight array
+		double delta_t = reward + nextValue - bestMoveValue;
+		for (int i = 0; i < weights.length; i++){
+			weights[i] += delta_t * (1 - Math.pow(bestMoveValue, 2)) * activeWeights[i];
+		}
+
 		return bestMove;
 	}	
 	
