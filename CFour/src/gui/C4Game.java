@@ -15,6 +15,8 @@ import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.Semaphore;
 import javax.swing.JFrame;
@@ -101,7 +103,7 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 	private int winner;
 
 	// Evaluation settings, can change these later on
-	private final double targetScore = 0;
+	private final double targetScore = 1;
 	private final int evalInterval = 2;
 	private final int evalGames = 1;
 	private final String FILE_NAME = "results.csv";
@@ -672,7 +674,7 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 						c4Buttons.printStatus("Time needed for move: " + timeS
 							+ "s");
 
-					String[] color = { "Yellow", "Red" };
+					String[] color = { "Yellow", "Red", "Evaluation" };
 					String sPlayer = players[curPlayer].getName() + " ("
 							+ color[curPlayer] + ")";
 					makeCompleteMove(x, sPlayer);
@@ -753,7 +755,6 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 	}
 
 	public void run() {
-		FileWriter out = new FileWriter(FILE_NAME);
 		while (true) {
 			// Deactivate most menu-items (except File and Help) for the
 			// different states
@@ -779,9 +780,18 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 				break;
 			case TRAIN_EVAL:
 				double score = evaluateAgent();
-
 				// write the output of each evaluation to a file
-				out.append(numTrainingGames + "," + score + "\n");
+				FileWriter out;
+				try {
+					out = new FileWriter(FILE_NAME, true);
+					out.append(numTrainingGames + "," + score + "\n");
+					out.flush();
+					out.close();
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				
 				if (score >= targetScore){
 					c4Buttons.printStatus("Finished training!");
 					changeState(State.IDLE);
@@ -799,8 +809,6 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 			} catch (Exception e) {
 			}
 		}
-		out.flush();
-		out.close();
 	}
 
 	private void handleAction() {
