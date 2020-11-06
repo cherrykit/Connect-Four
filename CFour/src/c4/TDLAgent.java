@@ -112,12 +112,10 @@ public class TDLAgent extends ConnectFour implements Agent {
 		return indices;
 	}
 
-	// Returns whether we should stop training the agent
-	// Evaluates agent and writes the result of each evaluation to a file
-	// Ethan: implement this (probably move this to C4Game.java!
-	public boolean evaluateAgent(TDLAgent agent) {
-		return false;
-	}
+	//  moved this to C4Game.java!
+	//	public boolean evaluateAgent(TDLAgent agent) {
+	//		return false;
+	//	}
 	
 	// one iteration of TDL
 	// Darrel: implement this

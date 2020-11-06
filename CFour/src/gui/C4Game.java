@@ -99,6 +99,13 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 	protected Agent[] players = new Agent[3];
 	private int curPlayer;
 	private int winner;
+
+	// Evaluation settings, can change these later on
+	private final double targetScore = 0;
+	private final int evalInterval = 2;
+	private final int evalGames = 1;
+	private final String FILE_NAME = "results.csv";
+
 	
 	private int numTrainingGames;
 	private boolean continueTraining;
@@ -419,8 +426,9 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 		}
 	}
 
+	// TODO: is there anywhere else we need to add support for players[2]?
 	private void swapPlayer() {
-		curPlayer = (1 - curPlayer);
+		curPlayer = (state == state.TRAIN_EVAL ? 2 : 1) - curPlayer;
 	}
 
 	protected void setInitialBoard() {
@@ -608,6 +616,32 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 		return "Started training";
 	}
 
+	// Evaluates agent in players[0] and returns the score
+	public double evaluateAgent() {
+		// TODO: do we need this?
+		players[2] = alphaBetaStd;
+
+		double score = 0;
+
+		for(int i = 0; i < evalGames; ++i){
+			winner = -1;
+			resetBoard();
+			playGame(true);
+			switch(winner){
+				case 0:
+					score += 1;
+					break;
+				case 1:
+					break;
+				case -1:
+					// TODO: what is winner in case of draw?
+					score += 0.5;
+					break;
+			}
+		}
+		return score;
+	}
+
 	// ==============================================================
 	// Button: Start Game
 	// ==============================================================
@@ -617,7 +651,7 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 		}
 		//printValueBar();
 
-		while (state == State.PLAY || state == State.TRAIN) {
+		while (state == State.PLAY || state == State.TRAIN || state == State.TRAIN_EVAL) {
 			// Check for Actions
 			handleAction();
 
@@ -652,7 +686,7 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 					//printValueBar();
 				}
 			}
-			else if (gameOver && state == State.TRAIN) {
+			else if (gameOver && (state == State.TRAIN || state == State.TRAIN_EVAL)) {
 				return;
 			}
 			if (state == State.PLAY) {
@@ -719,6 +753,7 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 	}
 
 	public void run() {
+		FileWriter out = new FileWriter(FILE_NAME);
 		while (true) {
 			// Deactivate most menu-items (except File and Help) for the
 			// different states
@@ -736,11 +771,22 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 				resetBoard();
 				numTrainingGames += 1;
 				c4Buttons.printStatus("Training game " + numTrainingGames);
-				if (numTrainingGames <= 2)
-					playGame(true);
-				else {
+				playGame(true);
+				if(numTrainingGames % evalInterval == 0){
+					c4Buttons.printStatus("Evaluating after game " + numTrainingGames);
+					changeState(State.TRAIN_EVAL);
+				}
+				break;
+			case TRAIN_EVAL:
+				double score = evaluateAgent();
+
+				// write the output of each evaluation to a file
+				out.append(numTrainingGames + "," + score + "\n");
+				if (score >= targetScore){
 					c4Buttons.printStatus("Finished training!");
 					changeState(State.IDLE);
+				} else {
+					changeState(State.TRAIN);
 				}
 				break;
 			default:
@@ -753,6 +799,8 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 			} catch (Exception e) {
 			}
 		}
+		out.flush();
+		out.close();
 	}
 
 	private void handleAction() {
