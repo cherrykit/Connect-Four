@@ -1,11 +1,8 @@
 package gui;
 
-import guiOptions.OptionsMinimax;
-
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.concurrent.Semaphore;
-import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 import openingBook.BookSum;
@@ -61,15 +58,15 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 	protected Agent[] players = new Agent[3];
 	private int curPlayer;
 	private int winner;
-	private boolean trainAgainstMinimax;
+	public boolean trainAgainstMinimax;
 
 	// Evaluation settings, can change these later on
 	private double prevScore1 = 0;
 	private double prevScore2 = 0;
 	private final int targetScore = 80;
-	private final int evalInterval = 25000;
+	private final int evalInterval = 20000;
 	private final int evalGames = 100;
-	private final String FILE_NAME = "results.csv";
+	public String FILE_NAME = "results.csv";
 	
 	public double alpha;
 	public double epsilon;
@@ -80,21 +77,7 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 	// Flag that is set, when a game is won by a player or drawn.
 	private boolean gameOver = false;
 
-	// Other Windows
-	protected OptionsMinimax winOptionsGTV = new OptionsMinimax(
-			AlphaBetaAgent.TRANSPOSBYTES);
-
-	// Options-Windows for the current agent-type
-	// params[0]:Player X
-	// params[1]:Player O
-	// params[2]:Player Eval
-	protected final JFrame params[] = new JFrame[3];
-
 	public C4Game() {
-		initGame();
-	}
-
-	public C4Game(C4Frame_v2_14 frame) {
 		initGame();
 	}
 
@@ -109,14 +92,12 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 
 		// Init the Standard Alpha-Beta-Agent
 		// Until yet, there were no changes of the Options
-		OptionsMinimax min = winOptionsGTV;
 		alphaBetaStd = new AlphaBetaAgent(books);
 		alphaBetaStd.resetBoard();
-		alphaBetaStd.setTransPosSize(min.getTableIndex());
-		alphaBetaStd.setBooks(min.useNormalBook(), min.useDeepBook(),
-				min.useDeepBookDist());
-		alphaBetaStd.setDifficulty(min.getSearchDepth());
-		alphaBetaStd.randomizeEqualMoves(min.randomizeEqualMoves());
+		alphaBetaStd.setTransPosSize(3);
+		alphaBetaStd.setBooks(true, false, true);
+		alphaBetaStd.setDifficulty(100);
+		alphaBetaStd.randomizeEqualMoves(true);
 		
 		winner = -1;
 	}
@@ -190,24 +171,6 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 	}
 
 	protected Agent initAlphaBetaAgent(int player) {
-		if (params[player] == null
-				|| !params[player].getClass().equals(OptionsMinimax.class))
-			params[player] = new OptionsMinimax(AlphaBetaAgent.TRANSPOSBYTES);
-		OptionsMinimax min = (OptionsMinimax) params[player];
-		if (!min.usePresetting()) {
-			AlphaBetaAgent ab = new AlphaBetaAgent(books);
-			ab.resetBoard();
-
-			ab.setTransPosSize(min.getTableIndex());
-			ab.setBooks(min.useNormalBook(), min.useDeepBook(),
-					min.useDeepBookDist());
-			ab.setDifficulty(min.getSearchDepth());
-			ab.randomizeEqualMoves(min.randomizeEqualMoves());
-
-			// Using N-Tuple-System for move-Ordering
-			// ab.setTDAgent((TDSAgent) players[2]);
-			return ab;
-		}
 		return alphaBetaStd;
 	}
 	

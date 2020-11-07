@@ -4,7 +4,8 @@ public class Console {
 
 	public static final String TITLE = "Connect Four";
 	
-	private C4Game t_Game;
+	private C4Game[] t_Game;
+	private int numInstances;
 
 	/**
 	 * @param args
@@ -21,24 +22,30 @@ public class Console {
 	 * Initialize the frame and {@link #t_Game}.
 	 */
 	private void init(String[] args) {
-		if (args.length >= 3)
-			t_Game.epsilon = Double.parseDouble(args[2]);
-		else
-			t_Game.epsilon = 0.1;
-		if (args.length >= 2)
-			t_Game.alpha = Double.parseDouble(args[1]);
-		else
-			t_Game.alpha = 0.004;
-		if (args.length >= 1)
-			t_Game.players[0] = t_Game.initTDLAgent(Boolean.parseBoolean(args[0]));
-		else
-			t_Game.players[0] = t_Game.initTDLAgent(false);
-		t_Game.trainTDLAgent(0);
-		t_Game.init();
+		for(int i = 0; i < numInstances; i++) {
+			t_Game[i] = new C4Game();
+			if (args.length >= 3)
+				t_Game[i].epsilon = Double.parseDouble(args[2]);
+			else
+				t_Game[i].epsilon = 0.1;
+			if (args.length >= 2)
+				t_Game[i].alpha = Double.parseDouble(args[1]);
+			else
+				t_Game[i].alpha = 0.004;
+			if (args.length >= 1)
+				t_Game[i].players[0] = t_Game[i].initTDLAgent(Boolean.parseBoolean(args[0]));
+			else
+				t_Game[i].players[0] = t_Game[i].initTDLAgent(false);
+			t_Game[i].FILE_NAME = "results_" + t_Game[i].trainAgainstMinimax + 
+					"_" + t_Game[i].alpha + "_" + t_Game[i].epsilon + "_#" + i + ".csv";
+			t_Game[i].trainTDLAgent(0);
+			t_Game[i].init();
+		}
 	}
 
 	private Console() {
-		t_Game = new C4Game();
+		numInstances = Runtime.getRuntime().availableProcessors();
+		t_Game = new C4Game[numInstances];
 	}
 	
 }
