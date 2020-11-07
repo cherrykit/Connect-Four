@@ -1,7 +1,6 @@
 package gui;
 
 import guiOptions.OptionsMinimax;
-import guiOptions.OptionsTDL;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -68,9 +67,12 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 	private double prevScore1 = 0;
 	private double prevScore2 = 0;
 	private final int targetScore = 80;
-	private final int evalInterval = 50000;
+	private final int evalInterval = 25000;
 	private final int evalGames = 100;
 	private final String FILE_NAME = "results.csv";
+	
+	public double alpha;
+	public double epsilon;
 
 	
 	private int numTrainingGames;
@@ -209,14 +211,9 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 		return alphaBetaStd;
 	}
 	
-	protected Agent initTDLAgent(int player) {
-		if (params[player] == null
-				|| !params[player].getClass().equals(OptionsTDL.class))
-			params[player] = new OptionsTDL();
-		OptionsTDL min = (OptionsTDL) params[player];
-		trainAgainstMinimax = min.playAgainstMinimax();
-		
-		return new TDLAgent(trainAgainstMinimax, false, 0);
+	protected Agent initTDLAgent(boolean trainAgainstMinimax) {
+		this.trainAgainstMinimax = trainAgainstMinimax;
+		return new TDLAgent(trainAgainstMinimax, false, 0, alpha, epsilon);
 	}
 	
 	protected String trainTDLAgent(int player) {
@@ -225,7 +222,7 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 		if (curAgent.trainAgainstMinimax) {
 			players[1] = alphaBetaStd;
 		} else {
-			players[1] = new TDLAgent(false, true, 1);
+			players[1] = new TDLAgent(false, true, 1, alpha, epsilon);
 		}
 		curAgent.isTraining = true;
 		changeState(State.TRAIN);
@@ -302,12 +299,12 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 	}
 
 	public void run() {
+		System.out.println("Started training!");
 		while (true) {
 			state = State.TRAIN;
 			numTrainingGames += 1;
 			while (numTrainingGames % evalInterval != 0) {
 				resetBoard();
-				System.out.println("Training game " + numTrainingGames);
 				playGame(true);
 				((TDLAgent)players[0]).updateAlpha();
 				if (!trainAgainstMinimax) {

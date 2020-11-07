@@ -13,15 +13,26 @@ public class Console {
 		
 		final Console console = new Console();
 
-		 console.init();
+		 console.init(args);
 
 	}
 
 	/**
 	 * Initialize the frame and {@link #t_Game}.
 	 */
-	private void init() {
-		t_Game.players[0] = t_Game.initTDLAgent(0);
+	private void init(String[] args) {
+		if (args.length >= 3)
+			t_Game.epsilon = Double.parseDouble(args[2]);
+		else
+			t_Game.epsilon = 0.1;
+		if (args.length >= 2)
+			t_Game.alpha = Double.parseDouble(args[1]);
+		else
+			t_Game.alpha = 0.004;
+		if (args.length >= 1)
+			t_Game.players[0] = t_Game.initTDLAgent(Boolean.parseBoolean(args[0]));
+		else
+			t_Game.players[0] = t_Game.initTDLAgent(false);
 		t_Game.trainTDLAgent(0);
 		t_Game.init();
 	}
