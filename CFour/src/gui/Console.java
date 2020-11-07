@@ -21,9 +21,9 @@ public class Console {
 	 * Initialize the frame and {@link #t_Game}.
 	 */
 	private void init() {
-		t_Game.init();
 		t_Game.players[0] = t_Game.initTDLAgent(0);
 		t_Game.trainTDLAgent(0);
+		t_Game.init();
 	}
 
 	private Console() {

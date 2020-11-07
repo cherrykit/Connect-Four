@@ -69,7 +69,6 @@ public class C4Frame_v2_14 extends JFrame {
 		super(title);
 		t_Game = new C4Game(this);
 		setLayout(new BorderLayout(10, 10));
-		setJMenuBar(t_Game.c4Menu);
 		add(t_Game, BorderLayout.CENTER);
 		add(new Label(" "), BorderLayout.SOUTH);
 

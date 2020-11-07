@@ -1,6 +1,5 @@
 package gui;
 
-import gui.C4Game.Action;
 import gui.C4Game.State;
 import guiOptions.OptionsMinimax;
 import guiOptions.OptionsTDL;
@@ -11,10 +10,6 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.Window;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.util.Arrays;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -29,7 +24,6 @@ import javax.swing.JTextArea;
 import c4.Agent.AgentState;
 import c4.AlphaBetaAgent;
 import c4.Agent;
-import c4.RandomAgent;
 
 /**
  * Class containing all the Buttons on the right panel of the main-window
@@ -176,290 +170,6 @@ public class C4Buttons extends JPanel {
 		bSetInitialBoard = new JButton("Set");
 		bResetBoard = new JButton("Reset");
 		progress = new JProgressBar(0, 100);
-
-		// ==============================================================
-		// Add Action Listeners
-		// ==============================================================
-		bPlay.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				if (m_game.state != C4Game.State.PLAY) {
-					m_game.changeState(C4Game.State.PLAY);
-					String str = "[Start Game...]";
-					printStatus(str);
-				}
-			}
-		});
-
-		bStopGame.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				m_game.changeState(C4Game.State.IDLE);
-				m_game.resetBoard();
-				String str = "[Game Stopped by User]";
-				printStatus(str);
-			}
-		});
-
-		bStep.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				boolean autoMode = cbAutostep.isSelected();
-				if (m_game.state == State.PLAY && !autoMode)
-					m_game.setPlayStep(true);
-			}
-		});
-
-		cbShowGTV.addItemListener(new ItemListener() {
-			public void itemStateChanged(ItemEvent arg0) {
-				initValueBar();
-			}
-		});
-
-		cbShowAgentV.addItemListener(new ItemListener() {
-			public void itemStateChanged(ItemEvent arg0) {
-				initValueBar();
-			}
-		});
-
-		cbShowEvalV.addItemListener(new ItemListener() {
-			public void itemStateChanged(ItemEvent arg0) {
-				initValueBar();
-			}
-		});
-
-		cbAutostep.addItemListener(new ItemListener() {
-			@Override
-			public void itemStateChanged(ItemEvent arg0) {
-				// boolean isChecked = cbAutostep.isSelected();
-				// bStep.setEnabled(!isChecked);
-			}
-		});
-
-		bMoveBack.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				m_game.action = Action.MOVEBACK;
-				String str = "[Take move back]";
-				printStatus(str);
-			}
-		});
-
-		bNextMove.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				m_game.action = Action.NEXTMOVE;
-				String str = "[Make a move forward]";
-				printStatus(str);
-			}
-		});
-
-		bParamsX.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				int x = cChooseX.getSelectedIndex();
-				openParams(x, 0);
-
-			}
-		});
-
-		bParamsO.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				int x = cChooseO.getSelectedIndex();
-				openParams(x, 1);
-
-			}
-		});
-
-		bParamsEval.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				int x = cChooseEval.getSelectedIndex();
-				openParams(x, 2);
-
-			}
-		});
-
-		bInitX.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				String str = "[Agent succesfully initialized]";
-				if (isToBeInitialized(0))
-					switch (cChooseX.getSelectedIndex()) {
-					case 0:
-						m_game.players[0] = null;
-						str = "[No Action made]";
-						break;
-					case 1:
-						m_game.players[0] = m_game.initAlphaBetaAgent(0);
-						break;
-					case 2:
-						m_game.players[0] = m_game.initTDLAgent(0);
-						break;
-					case 3:
-						m_game.players[0] = new RandomAgent();
-						break;
-					default:
-						throw new UnsupportedOperationException(
-								"Agent not supported yet!");
-					}
-				else
-					str = "[Agent was not changed!]";
-				printStatus(str);
-			}
-		});
-
-		bInitO.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				String str = "[Agent succesfully initialized]";
-				if (isToBeInitialized(1))
-					switch (cChooseO.getSelectedIndex()) {
-					case 0:
-						m_game.players[1] = null;
-						str = "[No Action made]";
-						break;
-					case 1:
-						m_game.players[1] = m_game.initAlphaBetaAgent(1);
-						break;
-					case 3:
-						m_game.players[1] = new RandomAgent();
-						break;
-					default:
-						throw new UnsupportedOperationException(
-								"Agent not supported yet!");
-					}
-				else
-					str = "[Agent was not changed!]";
-				printStatus(str);
-			}
-		});
-
-		bInitEval.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				String str = "[Agent succesfully initialized]";
-				if (isToBeInitialized(2))
-					switch (cChooseEval.getSelectedIndex()) {
-					case 0:
-						m_game.players[2] = null;
-						str = "[No Action made]";
-						break;
-					case 1:
-						m_game.players[2] = m_game.initAlphaBetaAgent(2);
-						break;
-					case 3:
-						m_game.players[2] = new RandomAgent();
-						break;
-					default:
-						throw new UnsupportedOperationException(
-								"Agent not supported yet!");
-					}
-				else
-					str = "[Agent was not changed!]";
-				printStatus(str);
-			}
-		});
-
-		bTrainX.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				String str = "";
-				if (isToBeTrained(0))
-					switch (cChooseX.getSelectedIndex()) {
-					case 0:
-						m_game.players[0] = null;
-						str = "[No Action!]";
-						break;
-					case 1:
-						m_game.players[0] = m_game.initAlphaBetaAgent(0);
-						str = "[Init with AB-Agent]";
-						break;
-					case 2:
-						// Assumes agent is already initialized
-						str = "[Training TDL Agent]" + m_game.trainTDLAgent(0);
-						break;
-					case 3:
-						m_game.players[0] = new RandomAgent();
-						str = "[Init with Random-Agent]";
-						break;
-					}
-				printStatus(str);
-			}
-		});
-
-		bTrainO.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				String str = "";
-				if (isToBeTrained(1))
-					switch (cChooseO.getSelectedIndex()) {
-					case 0:
-						m_game.players[1] = null;
-						str = "[No Action!]";
-						break;
-					case 1:
-						m_game.players[1] = m_game.initAlphaBetaAgent(1);
-						str = "[Init with AB-Agent]";
-						break;
-					case 3:
-						m_game.players[1] = new RandomAgent();
-						str = "[Init with Random-Agent]";
-						break;
-					}
-				printStatus(str);
-			}
-		});
-
-		bTrainEval.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				String str = "";
-				if (isToBeTrained(2))
-					switch (cChooseEval.getSelectedIndex()) {
-					case 0:
-						m_game.players[2] = null;
-						str = "[No Action!]";
-						break;
-					case 1:
-						m_game.players[2] = m_game.initAlphaBetaAgent(2);
-						str = "[Init with AB-Agent]";
-						break;
-					case 3:
-						m_game.players[2] = new RandomAgent();
-						str = "[Init with Random-Agent]";
-						break;
-					}
-				printStatus(str);
-			}
-		});
-
-		bMakeNextMoveEval.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				int[][] board = m_game.c4.getBoard();
-				Agent pa = m_game.players[2];
-				String str = "[Evalution is not initialized. Can't make a move!]";
-				if (pa != null) {
-					int bestMove = pa.getBestMove(board);
-					m_game.makeCompleteMove(bestMove, "Evaluation");
-					setEnabledPlayStep(false);
-					str = "[Move made by Evaluation]";
-				}
-				printStatus(str);
-			}
-		});
-
-		bSetInitialBoard.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				String str = "";
-				if (m_game.state == State.SETBOARD) {
-					bSetInitialBoard.setText("Set");
-					m_game.changeState(State.IDLE);
-					str = "[Stop Setting Initial-Board]";
-				} else {
-					m_game.setInitialBoard();
-					m_game.changeState(State.SETBOARD);
-					bSetInitialBoard.setText("Stop");
-					str = "[Start Setting Initial-Board]";
-				}
-				printStatus(str);
-			}
-		});
-
-		bResetBoard.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				m_game.resetBoard();
-				String str = "[Reset Board]";
-				printStatus(str);
-			}
-		});
 
 		// ==============================================================
 		// Add Tool-Tips
@@ -663,27 +373,10 @@ public class C4Buttons extends JPanel {
 		obj.setVisible(!obj.isVisible());
 		int x = m_game.getLocation().x + m_game.getWidth() + 8;
 		int y = m_game.getLocation().y;
-		if (m_game.c4Frame != null) {
-			x = m_game.c4Frame.getLocation().x + m_game.c4Frame.getWidth() + 1;
-			y = m_game.c4Frame.getLocation().y;
-			Dimension screenSize = java.awt.Toolkit.getDefaultToolkit()
-					.getScreenSize();
-			if (x + obj.getWidth() > screenSize.width)
-				x = m_game.c4Frame.getLocation().x;
-			if (y + obj.getHeight() > screenSize.height)
-				y = 1;
-			// If window-height is still too large, then reduce it to screensize
-			if (obj.getHeight() + 5 > screenSize.height)
-				obj.setSize(obj.getWidth(), (int) (screenSize.height * 0.95));
-		}
 		obj.setLocation(x, y);
 	}
 
 	protected void initValueBar() {
-		m_game.showAgentV = cbShowAgentV.isSelected();
-		m_game.showAgentEvalV = cbShowEvalV.isSelected();
-		m_game.showGTV = cbShowGTV.isSelected();
-		m_game.printValueBar();
 	}
 
 	protected void openParams(int choiceIndex, int agent) {
@@ -718,105 +411,12 @@ public class C4Buttons extends JPanel {
 
 	protected void enableItems(State st) {
 		switch (st) {
-		case IDLE:
-			bPlay.setEnabled(true);
-			bStopGame.setEnabled(false);
-			bMoveBack.setEnabled(false);
-			bNextMove.setEnabled(false);
-			bParamsX.setEnabled(true);
-			bParamsO.setEnabled(true);
-			bInitX.setEnabled(true);
-			bInitO.setEnabled(true);
-			cChooseX.setEnabled(true);
-			cChooseO.setEnabled(true);
-			bSetInitialBoard.setEnabled(true);
-			bResetBoard.setEnabled(true);
-			cbShowGTV.setEnabled(true);
-			cbShowAgentV.setEnabled(true);
-			bMakeNextMoveEval.setEnabled(true);
-			bMakeNextMoveEval.setEnabled(false);
-			cbShowAgentV.setEnabled(true);
-			cbShowEvalV.setEnabled(true);
-			cbShowGTV.setEnabled(true);
-			cChooseEval.setEnabled(true);
-			bParamsEval.setEnabled(true);
-			bInitEval.setEnabled(true);
-			bTrainX.setEnabled(true);
-			bTrainO.setEnabled(true);
-			bTrainEval.setEnabled(true);
-			cbAutostep.setEnabled(false);
-			setEnabledPlayStep(false);
-			initValueBar();
-			break;
-		case PLAY:
-			bPlay.setEnabled(false);
-			bStopGame.setEnabled(true);
-			bMoveBack.setEnabled(true);
-			bNextMove.setEnabled(true);
-			bMakeNextMoveEval.setEnabled(true);
-			bParamsX.setEnabled(false);
-			bParamsO.setEnabled(false);
-			bInitX.setEnabled(false);
-			bInitO.setEnabled(false);
-			bSetInitialBoard.setEnabled(false);
-			bResetBoard.setEnabled(false);
-			cChooseX.setEnabled(false);
-			cChooseO.setEnabled(false);
-			bTrainX.setEnabled(false);
-			bTrainO.setEnabled(false);
-			cbAutostep.setEnabled(true);
-			break;
-		case SETBOARD:
-			bPlay.setEnabled(false);
-			bMakeNextMoveEval.setEnabled(false);
-			bMoveBack.setEnabled(true);
-			bNextMove.setEnabled(true);
-			bTrainX.setEnabled(false);
-			bTrainO.setEnabled(false);
-			break;
 		case TRAIN_EVAL:
 		case TRAIN:
-		case EVALUATE:
 			cChooseEval.setEnabled(false);
 			bParamsEval.setEnabled(false);
 			bInitEval.setEnabled(false);
 			bTrainEval.setEnabled(false);
-		case TESTVALUEFUNC:
-		case COMPETE:
-		case MULTICOMPETE:
-		case TESTBESTMOVE:
-		case MULTITRAIN:
-			cbAutostep.setEnabled(false);
-			bPlay.setEnabled(false);
-			bParamsX.setEnabled(false);
-			bParamsO.setEnabled(false);
-			bInitX.setEnabled(false);
-			bInitO.setEnabled(false);
-			bSetInitialBoard.setEnabled(false);
-			bResetBoard.setEnabled(false);
-			cChooseX.setEnabled(false);
-			cChooseO.setEnabled(false);
-			bMakeNextMoveEval.setEnabled(false);
-			cbShowAgentV.setEnabled(false);
-			cbShowEvalV.setEnabled(false);
-			cbShowGTV.setEnabled(false);
-			bTrainX.setEnabled(false);
-			bTrainO.setEnabled(false);
-			break;
-		case SHOWNTUPLE:
-			deactivateAll();
-			break;
-		case SETNTUPLE:
-			deactivateAll();
-			break;
-		case INSPNTUPLE:
-		case LOAD_EVAL:
-		case LOAD_O:
-		case LOAD_X:
-		case SAVE_EVAL:
-		case SAVE_O:
-		case SAVE_X:
-			deactivateAll();
 			break;
 		default:
 			break;
@@ -828,29 +428,6 @@ public class C4Buttons extends JPanel {
 			bStep.setEnabled(enabled);
 		else
 			bStep.setEnabled(false);
-	}
-
-	private void deactivateAll() {
-		cbAutostep.setEnabled(false);
-		bPlay.setEnabled(false);
-		bParamsX.setEnabled(false);
-		bParamsO.setEnabled(false);
-		bInitX.setEnabled(false);
-		bInitO.setEnabled(false);
-		bSetInitialBoard.setEnabled(false);
-		bResetBoard.setEnabled(false);
-		cChooseX.setEnabled(false);
-		cChooseO.setEnabled(false);
-		bMakeNextMoveEval.setEnabled(false);
-		cbShowAgentV.setEnabled(false);
-		cbShowEvalV.setEnabled(false);
-		cbShowGTV.setEnabled(false);
-		cChooseEval.setEnabled(false);
-		bParamsEval.setEnabled(false);
-		bInitEval.setEnabled(false);
-		bTrainX.setEnabled(false);
-		bTrainO.setEnabled(false);
-		bTrainEval.setEnabled(false);
 	}
 
 	protected void printCurAgents(Agent pa[]) {
@@ -895,7 +472,6 @@ public class C4Buttons extends JPanel {
 	}
 
 	public void printStatus(String str) {
-		m_game.syncStatusBar = true;
 		System.out.println(str);
 		statusBar.setMessage(str);
 	}
