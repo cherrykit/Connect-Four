@@ -103,14 +103,15 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 	private int winner;
 
 	// Evaluation settings, can change these later on
-	private final double targetScore = 1;
-	private final int evalInterval = 2;
-	private final int evalGames = 1;
+	private double prevScore1 = 0;
+	private double prevScore2 = 0;
+	private final int targetScore = 80;
+	private final int evalInterval = 100000;
+	private final int evalGames = 100;
 	private final String FILE_NAME = "results.csv";
 
 	
 	private int numTrainingGames;
-	private boolean continueTraining;
 
 	// Agent for the game-theoretic-values (perfect minimax-agent)
 	private Agent GTVab = null;
@@ -613,7 +614,6 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 		winner = -1;
 		c4Buttons.cbAutostep.setSelected(true);
 		numTrainingGames = 0;
-		continueTraining = true;
 
 		return "Started training";
 	}
@@ -622,6 +622,7 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 	public double evaluateAgent() {
 		// TODO: do we need this?
 		players[2] = alphaBetaStd;
+		((TDLAgent)players[0]).isTraining = false;
 
 		double score = 0;
 
@@ -641,6 +642,9 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 					break;
 			}
 		}
+		
+		((TDLAgent)players[0]).isTraining = true;
+		
 		return score;
 	}
 
@@ -792,10 +796,12 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 					e1.printStackTrace();
 				}
 				
-				if (score >= targetScore){
+				if (score >= targetScore && score <= prevScore1 && score <= prevScore2){
 					c4Buttons.printStatus("Finished training!");
 					changeState(State.IDLE);
 				} else {
+					prevScore1 = prevScore2;
+					prevScore2 = score;
 					changeState(State.TRAIN);
 				}
 				break;

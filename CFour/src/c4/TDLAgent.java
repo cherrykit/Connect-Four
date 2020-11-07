@@ -137,8 +137,7 @@ public class TDLAgent extends ConnectFour implements Agent {
 		}
 
 		//initializing values
-		int reward = canWin(bestMove) ? 1 : 0;
-		double nextValue = 0;
+		double curValue = 0;
 
 		/*double currentValue = 0;
 		//getting the value for the current board state
@@ -148,23 +147,21 @@ public class TDLAgent extends ConnectFour implements Agent {
 		currentValue = Math.tanh(currentValue);
 		*/
 
-		//getting the indices array for the next board state
-		putPiece(bestMove);
+		//getting the indices array for the current board state
 		int[][] boardState = getBoard();
 		int[][] mirroredState = getMirroredField(boardState);
 		int[] nextActiveWeights = getIndices(boardState, mirroredState);
-		removePiece(player, bestMove);
 
-		//getting the value for the next board state
+		//getting the value for the current board state
 		for (int i = 0; i < nextActiveWeights.length; i++) {
-			nextValue += nextActiveWeights[i] * weights[i];
+			curValue += nextActiveWeights[i] * weights[i];
 		}
-		nextValue = Math.tanh(nextValue);
+		curValue = Math.tanh(curValue);
 
 		//update weight array
-		double delta_t = reward + nextValue - bestMoveValue;
+		double delta_t = bestMoveValue - curValue;
 		for (int i = 0; i < weights.length; i++){
-			weights[i] += delta_t * (1 - Math.pow(bestMoveValue, 2)) * activeWeights[i];
+			weights[i] += delta_t * (1 - Math.pow(curValue, 2)) * activeWeights[i];
 		}
 
 		return bestMove;
