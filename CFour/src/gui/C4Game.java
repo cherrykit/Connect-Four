@@ -101,12 +101,13 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 	protected Agent[] players = new Agent[3];
 	private int curPlayer;
 	private int winner;
+	private boolean trainAgainstMinimax;
 
 	// Evaluation settings, can change these later on
 	private double prevScore1 = 0;
 	private double prevScore2 = 0;
 	private final int targetScore = 80;
-	private final int evalInterval = 100000;
+	private final int evalInterval = 50000;
 	private final int evalGames = 100;
 	private final String FILE_NAME = "results.csv";
 
@@ -431,7 +432,7 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 
 	// TODO: is there anywhere else we need to add support for players[2]?
 	private void swapPlayer() {
-		curPlayer = (state == state.TRAIN_EVAL ? 2 : 1) - curPlayer;
+		curPlayer = (state == State.TRAIN_EVAL ? 2 : 1) - curPlayer;
 	}
 
 	protected void setInitialBoard() {
@@ -596,7 +597,7 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 				|| !params[player].getClass().equals(OptionsTDL.class))
 			params[player] = new OptionsTDL();
 		OptionsTDL min = (OptionsTDL) params[player];
-		boolean trainAgainstMinimax = min.playAgainstMinimax();
+		trainAgainstMinimax = min.playAgainstMinimax();
 		
 		return new TDLAgent(trainAgainstMinimax, false, 0);
 	}
@@ -777,6 +778,10 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 				numTrainingGames += 1;
 				c4Buttons.printStatus("Training game " + numTrainingGames);
 				playGame(true);
+				((TDLAgent)players[0]).updateAlpha();
+				if (!trainAgainstMinimax) {
+					((TDLAgent)players[1]).updateAlpha();
+				}
 				if(numTrainingGames % evalInterval == 0){
 					c4Buttons.printStatus("Evaluating after game " + numTrainingGames);
 					changeState(State.TRAIN_EVAL);

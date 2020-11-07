@@ -10,6 +10,8 @@ public class TDLAgent extends ConnectFour implements Agent {
 	public boolean trainAgainstMinimax;
 	public boolean isTraining;
 	private double epsilon = 0.1;
+	private double alpha = 0.004;
+	private int numGames = 0;
 	
 	// n-tuples
 	private int[][] nTuples = {
@@ -113,6 +115,11 @@ public class TDLAgent extends ConnectFour implements Agent {
 		}
 		return indices;
 	}
+	
+	public void updateAlpha() {
+		numGames += 1;
+		alpha = 0.001 + 0.003 * Math.exp(-0.0000005*numGames);
+	}
 
 	//  moved this to C4Game.java!
 	//	public boolean evaluateAgent(TDLAgent agent) {
@@ -161,7 +168,7 @@ public class TDLAgent extends ConnectFour implements Agent {
 		//update weight array
 		double delta_t = bestMoveValue - curValue;
 		for (int i = 0; i < weights.length; i++){
-			weights[i] += delta_t * (1 - Math.pow(curValue, 2)) * activeWeights[i];
+			weights[i] += alpha * delta_t * (1 - Math.pow(curValue, 2)) * activeWeights[i];
 		}
 
 		return bestMove;
