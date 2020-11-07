@@ -307,11 +307,8 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 				int col = mvList.readPrevMove();
 				if (!c4.canWin(2, col, c4.getColHeight(col) - 1)) {
 					gameOver = true;
-					new MessageBox("Draw!!!       ", "Game Over");
 				}
 			}
-			if (!gameOver)
-				printValueBar();
 			return true;
 		}
 		return false; // error
@@ -323,15 +320,6 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 
 	private void setPiece(int x, int player) {
 		putPiece(x, player);
-		int last = mvList.readPrevMove();
-		if (last != -1) {
-			int i = last;
-			int j = c4.getColHeight(i) - 1;
-			if (x == i)
-				j--;
-			unMarkMove(i, j, player);
-		}
-
 		mvList.putMove(x);
 	}
 
@@ -340,38 +328,7 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 	}
 
 	private void putPiece(int x, int player) {
-		int y = c4.getColHeight(x);
 		c4.putPiece(player + 1, x);
-		markMove(x, y, player);
-	}
-
-	private void markMove(int x, int y, int player) {
-		int imgIndex = (player == 0 ? ImgShowComponent.YELLOW_M
-				: ImgShowComponent.RED_M);
-		ImgShowComponent newImg = replaceImage(playingBoard[x][y], imgIndex, x,
-				y);
-
-		if (newImg != playingBoard[x][y]) {
-			playingBoardPanel.remove((5 - y) * 7 + x);
-			playingBoard[x][y] = newImg;
-			playingBoardPanel.add(playingBoard[x][y], (5 - y) * 7 + x);
-			playingBoardPanel.invalidate();
-			playingBoardPanel.validate();
-		}
-	}
-
-	private void unMarkMove(int x, int y, int player) {
-		int imgIndex = (player == 0 ? ImgShowComponent.RED
-				: ImgShowComponent.YELLOW);
-		ImgShowComponent newImg = replaceImage(playingBoard[x][y], imgIndex, x,
-				y);
-		if (newImg != playingBoard[x][y]) {
-			playingBoardPanel.remove((5 - y) * 7 + x);
-			playingBoard[x][y] = newImg;
-			playingBoardPanel.add(playingBoard[x][y], (5 - y) * 7 + x);
-			playingBoardPanel.invalidate();
-			playingBoardPanel.validate();
-		}
 	}
 
 	private void removePiece(int x, int player) {
@@ -665,19 +622,10 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 			if (players[curPlayer] == null && !gameOver) {
 
 			} else if (!gameOver) {
-				c4Buttons.setEnabledPlayStep(players[curPlayer] != null);
-				boolean autoMode = c4Buttons.cbAutostep.isSelected();
+				boolean autoMode = true;
 				if (playStep || autoMode) {
-					setPlayStep(false);
-					c4Buttons.setEnabledPlayStep(false);
 
-					long startTime = System.currentTimeMillis();
 					int x = players[curPlayer].getBestMove(c4.getBoard());
-
-					float timeS = (float) ((System.currentTimeMillis() - startTime) / 1000.0);
-					if (state == State.PLAY)
-						c4Buttons.printStatus("Time needed for move: " + timeS
-							+ "s");
 
 					String[] color = { "Yellow", "Red", "Evaluation" };
 					String sPlayer = players[curPlayer].getName() + " ("
@@ -718,8 +666,6 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 			swapPlayer();
 			removePiece(col, curPlayer);
 			col = mvList.readPrevMove();
-			if (col != -1)
-				markMove(col, c4.getColHeight(col) - 1, 1 - curPlayer);
 			c4Buttons.setEnabledPlayStep(players[curPlayer] != null);
 			printValueBar();
 		}
@@ -731,8 +677,6 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 	private void nextMove() {
 		if (mvList.isNextMove()) {
 			int prevCol = mvList.readPrevMove();
-			if (prevCol != -1)
-				unMarkMove(prevCol, c4.getColHeight(prevCol) - 1, curPlayer);
 			int col = mvList.getNextMove();
 			if (c4.canWin(curPlayer + 1, col))
 				gameOver = true;
@@ -763,10 +707,8 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 		while (true) {
 			// Deactivate most menu-items (except File and Help) for the
 			// different states
-			c4Menu.setEnabledMenus(new int[] { 1 }, false);
 			switch (state) {
 			case IDLE:
-				c4Menu.setEnabledMenus(new int[] { 1 }, true);
 				action = Action.NOACTION;
 				break;
 			case PLAY:
@@ -776,14 +718,14 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 			case TRAIN:
 				resetBoard();
 				numTrainingGames += 1;
-				c4Buttons.printStatus("Training game " + numTrainingGames);
+				System.out.println("Training game " + numTrainingGames);
 				playGame(true);
 				((TDLAgent)players[0]).updateAlpha();
 				if (!trainAgainstMinimax) {
 					((TDLAgent)players[1]).updateAlpha();
 				}
 				if(numTrainingGames % evalInterval == 0){
-					c4Buttons.printStatus("Evaluating after game " + numTrainingGames);
+					System.out.println("Evaluating after game " + numTrainingGames);
 					changeState(State.TRAIN_EVAL);
 				}
 				break;
@@ -802,7 +744,7 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 				}
 				
 				if (score >= targetScore && score <= prevScore1 && score <= prevScore2){
-					c4Buttons.printStatus("Finished training!");
+					System.out.println("Finished training!");
 					changeState(State.IDLE);
 				} else {
 					prevScore1 = prevScore2;
