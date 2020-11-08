@@ -268,6 +268,9 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 			numTrainingGames += 1;
 			while (numTrainingGames % evalInterval != 0) {
 				resetBoard();
+				if (numTrainingGames % 1000 == 0) {
+					System.out.println("Starting training game " + numTrainingGames);
+				}
 				playGame(true);
 				((TDLAgent)players[0]).updateAlpha();
 				if (!trainAgainstMinimax) {

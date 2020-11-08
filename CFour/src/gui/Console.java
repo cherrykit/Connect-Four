@@ -44,7 +44,8 @@ public class Console {
 	}
 
 	private Console() {
-		numInstances = Runtime.getRuntime().availableProcessors();
+		//numInstances = Runtime.getRuntime().availableProcessors();
+		numInstances = 1;
 		t_Game = new C4Game[numInstances];
 	}
 	

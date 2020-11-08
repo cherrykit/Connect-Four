@@ -233,8 +233,6 @@ public class TDLAgent extends ConnectFour implements Agent {
 			// calculate dot product for each
 			if (value == 0 && isDraw()) {
 				value = 0;
-			} else if (value == 0 && hasWin(player == 1 ? 2 : 1)) {
-				value = -1;
 			} else if (value == 0) {
 				value = nextIndices[possibleMoves[i]].innerProduct(weights);
 				value = Math.tanh(value);
