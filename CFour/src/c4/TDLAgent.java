@@ -15,6 +15,9 @@ public class TDLAgent extends ConnectFour implements Agent {
 	private double alphaInit;
 	private double alpha;
 	private int numGames = 0;
+	public double lastDelta = 0;
+	public int lastMove;
+	public boolean lastWasRandom;
 	
 	// n-tuples
 	private int[][] nTuples = {
@@ -164,6 +167,7 @@ public class TDLAgent extends ConnectFour implements Agent {
 
 		//update weight array
 		double delta_t = bestMoveValue - curValue;
+		lastDelta = delta_t;
 		
 		VectorIterator indicesIt = nextIndices[bestMove].nonZeroIterator();
 		while (indicesIt.hasNext()) {
@@ -188,7 +192,6 @@ public class TDLAgent extends ConnectFour implements Agent {
 		this.epsilon = epsilon;
 	}
 
-
 	public String getName() {
 		return new String("TDL-Agent");
 	}
@@ -206,9 +209,11 @@ public class TDLAgent extends ConnectFour implements Agent {
 			double e = ThreadLocalRandom.current().nextDouble();
 			// take random move
 			if (e < epsilon){
+				lastWasRandom = true;
 				int randomMove = ThreadLocalRandom.current().nextInt(0,possibleMoves.length);
 				return possibleMoves[randomMove];
 			}
+			lastWasRandom = false;
 		}
 		
 		double bestValue = -100;
@@ -247,6 +252,7 @@ public class TDLAgent extends ConnectFour implements Agent {
 			
 		}
 		// return best one or call TDL iteration with the best one
+		lastMove = possibleMoves[bestIndex];
 		
 		// call TDL instead when training, pass in the active weights vector as well
 		if (isTraining)

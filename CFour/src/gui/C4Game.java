@@ -141,6 +141,7 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 		mvList.reset();
 		gameOver = false;
 		curPlayer = 0;
+		winner = -1;
 	}
 
 	private void checkWin(int x, String sPlayer) {
@@ -189,7 +190,6 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 		}
 		curAgent.isTraining = true;
 		changeState(State.TRAIN);
-		winner = -1;
 		c4Buttons.cbAutostep.setSelected(true);
 		numTrainingGames = 0;
 
@@ -272,6 +272,15 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 					System.out.println("Starting training game " + numTrainingGames);
 				}
 				playGame(true);
+				// give rewards to players if they lost or drew the game
+				if (curPlayer == 0 || !trainAgainstMinimax) {
+					int reward = -1;
+					if (winner == -1)
+						reward = 0;
+					TDLAgent a = ((TDLAgent)players[curPlayer]);
+					a.oneTDLIteration(a.lastMove, reward - a.lastDelta);
+				}
+				
 				((TDLAgent)players[0]).updateAlpha();
 				if (!trainAgainstMinimax) {
 					((TDLAgent)players[1]).updateAlpha();
