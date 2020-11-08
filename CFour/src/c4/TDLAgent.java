@@ -8,7 +8,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public class TDLAgent extends ConnectFour implements Agent {
 	
 	// Add parameters we will use
-	public int player; // 0 for first player, 1 for second player
+	public int player; // 1 for first player, 2 for second player
 	public boolean trainAgainstMinimax;
 	public boolean isTraining;
 	private double epsilon = 0.1;
@@ -182,7 +182,7 @@ public class TDLAgent extends ConnectFour implements Agent {
 		super();
 		trainAgainstMinimax = againstMinimax;
 		this.isTraining = isTraining;
-		this.player = player;
+		this.player = player == 0 ? 1 : 2;
 		this.alphaInit = alphaInit;
 		this.alpha = alphaInit;
 		this.epsilon = epsilon;
@@ -217,6 +217,12 @@ public class TDLAgent extends ConnectFour implements Agent {
 		for (int i = 0; i < possibleMoves.length; i++) {
 			// calculate vector x for each move
 			
+			double value = 0;
+			
+			if (canWin(possibleMoves[i])) {
+				value = 1;
+			}
+			
 			putPiece(possibleMoves[i]);
 			
 			// start using this part
@@ -224,14 +230,12 @@ public class TDLAgent extends ConnectFour implements Agent {
 			int[][] mirroredState = getMirroredField(boardState);
 			setIndices(boardState, mirroredState, possibleMoves[i]);
 			
-			double value = 0;
-			
 			// calculate dot product for each
-			if (hasWin(player))
-				value = 1;
-			else if (isDraw())
+			if (value == 0 && isDraw()) {
 				value = 0;
-			else {
+			} else if (value == 0 && hasWin(player == 1 ? 2 : 1)) {
+				value = -1;
+			} else if (value == 0) {
 				value = nextIndices[possibleMoves[i]].innerProduct(weights);
 				value = Math.tanh(value);
 			}
