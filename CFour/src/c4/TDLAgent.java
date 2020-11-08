@@ -1,22 +1,26 @@
 package c4;
 
-import java.util.Arrays;
+import org.la4j.iterator.VectorIterator;
+import org.la4j.vector.sparse.CompressedVector;
+
 import java.util.concurrent.ThreadLocalRandom;
 
 public class TDLAgent extends ConnectFour implements Agent {
 	
 	// Add parameters we will use
-	public int player; // 0 for first player, 1 for second player
+	public int player; // 1 for first player, 2 for second player
 	public boolean trainAgainstMinimax;
 	public boolean isTraining;
 	private double epsilon = 0.1;
-	private double alpha = 0.004;
+	private double alphaInit;
+	private double alpha;
 	private int numGames = 0;
 	
 	// n-tuples
 	private int[][] nTuples = {
 			{0,6,7,12,13,14,19,21},
 			{1,3,4,6,7,8,9,10},
+			{4,5,9,10,11,15,16,17},
 			{3,8,9,10,11,15,16,17},
 			{25,26,27,28,33,39},
 			{2,3,4,8,9,14,15,20},
@@ -25,9 +29,11 @@ public class TDLAgent extends ConnectFour implements Agent {
 			{11,17,21,23,27,28,33,39},
 			{22,25,26,27,30,32,33,37},
 			{0,6,7,8,12,13,14,15},
+			{0,6,7,12,18,15,32,38},
 			{27,32,33,34,37,38,39,40},
-			{0,6,7,13,14,15,20},
-			{13,14,15,18,21,22,23,24},
+			{0,6,7,12,13,14,15,20},
+			{1,2,6,7,13,14,15,20},
+			{13,14,16,18,21,22,23,24},
 			{15,16,17,20,22,23,25,31},
 			{24,26,30,31,32,33,36,37},
 			{1,2,3,8,9,13,14,21},
@@ -74,6 +80,7 @@ public class TDLAgent extends ConnectFour implements Agent {
 			{30,31,33,34,36,37,38,39},
 			{3,4,10,11,14,15,16,17},
 			{18,19,25,26,31,32,34,39},
+			{26,27,31,32,33,38,38,39},
 			{1,2,7,14,20,27,28,29},
 			{9,14,15,20,21,22,27,32},
 			{10,14,15,20,21,22,27,32},
@@ -83,15 +90,24 @@ public class TDLAgent extends ConnectFour implements Agent {
 	// save weights as field here
 	// we have 65536 weights for each tuple and 68 tuples
 	// total of 4,456,448 weights
-	private double[] weights = new double[4456448];
+	private int weightsPerTuple = 65536;
+	private int numWeights = 4456448;
+	private CompressedVector weights = new CompressedVector(numWeights);
 	
-	private int[] getIndices(int[][] state1, int[][] state2) {
-		int[] indices = new int[weights.length];
-		Arrays.fill(indices, 0);
+	// initialize big arrays only once to save time
+	CompressedVector indices;
+	CompressedVector[] nextIndices = new CompressedVector[7];
+	
+	// will modify the indices field
+	private void setIndices(int[][] state1, int[][] state2, int index) {
+		if (index == -1)
+			indices = new CompressedVector(numWeights);
+		else
+			nextIndices[index] = new CompressedVector(numWeights);
 		for (int i = 0; i < nTuples.length; i++) {
 			int[] tuple = nTuples[i];
-			int index1 = 0;
-			int index2 = 0;
+			int index1 = weightsPerTuple * i;
+			int index2 = weightsPerTuple * i;
 			
 			for (int j = 0; j < tuple.length; j++) {
 				int col = (41 - tuple[j]) % 7;
@@ -109,22 +125,20 @@ public class TDLAgent extends ConnectFour implements Agent {
 					index2 += 3 * Math.pow(4, j);
 				}
 			}
-			
-			indices[index1] = 1;
-			indices[index2] = 1;
+			if (index == -1) {
+				indices.set(index1, 1);
+				indices.set(index2, 1);
+			} else {
+				nextIndices[index].set(index1, 1);
+				nextIndices[index].set(index2, 1);
+			}
 		}
-		return indices;
 	}
 	
 	public void updateAlpha() {
 		numGames += 1;
-		alpha = 0.001 + 0.003 * Math.exp(-0.0000005*numGames);
+		alpha = 0.002 + (alphaInit - 0.002) * Math.exp(-0.0000005*numGames);
 	}
-
-	//  moved this to C4Game.java!
-	//	public boolean evaluateAgent(TDLAgent agent) {
-	//		return false;
-	//	}
 	
 	// one iteration of TDL
 	// Darrel: implement this
@@ -134,41 +148,28 @@ public class TDLAgent extends ConnectFour implements Agent {
 	// check the getBestMove method for how to get the value of the current state 
 	// (between my start and end comments, the correct state should already be initialized)
 	// should modify the weights
-	public int oneTDLIteration(int bestMove, double bestMoveValue, int[] activeWeights) {
-		//epsilon greedy
-		double e = ThreadLocalRandom.current().nextDouble();
-		if (e < epsilon){
-			int[] possibleMoves = generateMoves(false);
-			int randomMove = ThreadLocalRandom.current().nextInt(0,possibleMoves.length);
-			return possibleMoves[randomMove];
-		}
-
-		//initializing values
+	public int oneTDLIteration(int bestMove, double bestMoveValue) {
+		
+		//already checked that do not take random move
 		double curValue = 0;
-
-		/*double currentValue = 0;
-		//getting the value for the current board state
-		for (int i = 0; i < weights.length; i++) {
-			currentValue += activeWeights[i] * weights[i];
-		}
-		currentValue = Math.tanh(currentValue);
-		*/
 
 		//getting the indices array for the current board state
 		int[][] boardState = getBoard();
 		int[][] mirroredState = getMirroredField(boardState);
-		int[] nextActiveWeights = getIndices(boardState, mirroredState);
+		setIndices(boardState, mirroredState, -1);
 
 		//getting the value for the current board state
-		for (int i = 0; i < nextActiveWeights.length; i++) {
-			curValue += nextActiveWeights[i] * weights[i];
-		}
+		curValue = indices.innerProduct(weights);
 		curValue = Math.tanh(curValue);
 
 		//update weight array
 		double delta_t = bestMoveValue - curValue;
-		for (int i = 0; i < weights.length; i++){
-			weights[i] += alpha * delta_t * (1 - Math.pow(curValue, 2)) * activeWeights[i];
+		
+		VectorIterator indicesIt = nextIndices[bestMove].nonZeroIterator();
+		while (indicesIt.hasNext()) {
+			indicesIt.next();
+			int index = indicesIt.index();
+			weights.set(index, weights.get(index) + alpha * delta_t * (1 - Math.pow(curValue, 2)));
 		}
 
 		return bestMove;
@@ -177,12 +178,14 @@ public class TDLAgent extends ConnectFour implements Agent {
 	/**
 	 * Generate an empty Board
 	 */
-	public TDLAgent(boolean againstMinimax, boolean isTraining, int player) {
+	public TDLAgent(boolean againstMinimax, boolean isTraining, int player, double alphaInit, double epsilon) {
 		super();
 		trainAgainstMinimax = againstMinimax;
 		this.isTraining = isTraining;
-		this.player = player;
-		Arrays.fill(weights, 0);
+		this.player = player == 0 ? 1 : 2;
+		this.alphaInit = alphaInit;
+		this.alpha = alphaInit;
+		this.epsilon = epsilon;
 	}
 
 
@@ -196,46 +199,65 @@ public class TDLAgent extends ConnectFour implements Agent {
 	// value is 1 for yellow (first) player, 2 for red (second) player and 0 for empty spaces
 	@Override
 	public int getBestMove(int[][] table) {
-		setBoard(table);
+		setBoard(table);//initializing values
 		int[] possibleMoves = generateMoves(false);
-		int[][] moveActiveWeights = new int[possibleMoves.length][weights.length];
-		double[] values = new double[possibleMoves.length];
+		
+		if (isTraining) {
+			double e = ThreadLocalRandom.current().nextDouble();
+			// take random move
+			if (e < epsilon){
+				int randomMove = ThreadLocalRandom.current().nextInt(0,possibleMoves.length);
+				return possibleMoves[randomMove];
+			}
+		}
+		
+		double bestValue = -100;
+		int bestIndex = -1;
+		
 		for (int i = 0; i < possibleMoves.length; i++) {
 			// calculate vector x for each move
+			
+			double value = 0;
+			
+			if (canWin(possibleMoves[i])) {
+				value = 1;
+			}
 			
 			putPiece(possibleMoves[i]);
 			
 			// start using this part
 			int[][] boardState = getBoard();
 			int[][] mirroredState = getMirroredField(boardState);
-			moveActiveWeights[i] = getIndices(boardState, mirroredState);
+			setIndices(boardState, mirroredState, possibleMoves[i]);
 			
 			// calculate dot product for each
-			if (hasWin(player))
-				values[i] = 1;
-			else if (isDraw())
-				values[i] = 0;
-			else {
-				for (int j = 0; j < weights.length; j++) {
-					values[i] += moveActiveWeights[i][j] * weights[j];
-				}
-				values[i] = Math.tanh(values[i]);
+			if (value == 0 && isDraw()) {
+				value = 0;
+			} else if (value == 0 && hasWin(player == 1 ? 2 : 1)) {
+				value = -1;
+			} else if (value == 0) {
+				value = nextIndices[possibleMoves[i]].innerProduct(weights);
+				value = Math.tanh(value);
 			}
-			// end using this part
+			
+			if (value > bestValue) {
+				bestValue = value;
+				bestIndex = i;
+			}
 			
 			removePiece(player, possibleMoves[i]);
 			
 		}
 		// return best one or call TDL iteration with the best one
-		int maxAt = 0;
-
-		for (int i = 0; i < values.length; i++) {
-		    maxAt = values[i] > values[maxAt] ? i : maxAt;
+		System.out.println("Best value is " + bestValue);
+		if (bestValue == -1) {
+			printBoard();
 		}
+		
 		// call TDL instead when training, pass in the active weights vector as well
 		if (isTraining)
-			return oneTDLIteration(possibleMoves[maxAt], values[maxAt], moveActiveWeights[maxAt]);
-		return possibleMoves[maxAt];
+			return oneTDLIteration(possibleMoves[bestIndex], bestValue);
+		return possibleMoves[bestIndex];
 	}
 	
 	// Don't need this yet

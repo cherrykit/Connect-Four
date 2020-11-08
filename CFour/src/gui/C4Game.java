@@ -599,7 +599,7 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 		OptionsTDL min = (OptionsTDL) params[player];
 		trainAgainstMinimax = min.playAgainstMinimax();
 		
-		return new TDLAgent(trainAgainstMinimax, false, 0);
+		return new TDLAgent(trainAgainstMinimax, false, 0, 0.004, 0.1);
 	}
 	
 	protected String trainTDLAgent(int player) {
@@ -608,7 +608,7 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 		if (curAgent.trainAgainstMinimax) {
 			players[1] = alphaBetaStd;
 		} else {
-			players[1] = new TDLAgent(false, true, 1);
+			players[1] = new TDLAgent(false, true, 1, 0.004, 0.1);
 		}
 		curAgent.isTraining = true;
 		changeState(State.TRAIN);
