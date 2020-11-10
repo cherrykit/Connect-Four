@@ -10,6 +10,7 @@ import openingBook.BookSum;
 import c4.AlphaBetaAgent;
 import c4.ConnectFour;
 import c4.MoveList;
+import c4.RandomAgent;
 import c4.TDLAgent;
 import c4.Agent;
 
@@ -157,7 +158,7 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 
 	// TODO: is there anywhere else we need to add support for players[2]?
 	private void swapPlayer() {
-		curPlayer = (state == State.TRAIN_EVAL ? 2 : 1) - curPlayer;
+		curPlayer = (state == State.TRAIN_EVAL || trainAgainstMinimax ? 2 : 1) - curPlayer;
 	}
 
 	protected void setInitialBoard() {
@@ -183,17 +184,21 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 	protected String trainTDLAgent(int player) {
 		TDLAgent curAgent = (TDLAgent) players[player];
 		// Init opponent
-		if (curAgent.trainAgainstMinimax) {
-			players[1] = alphaBetaStd;
-		} else {
-			players[1] = new TDLAgent(false, true, 1, alpha, epsilon);
-		}
+
+		TDLAgent other = new TDLAgent(false, true, 1, alpha, epsilon);
+		curAgent.other = other;
+		other.other = curAgent;
+		other.isTraining = true;
+		players[1] = other;
+		
+		players[2] = alphaBetaStd;
+		
 		curAgent.isTraining = true;
 		changeState(State.TRAIN);
 		c4Buttons.cbAutostep.setSelected(true);
 		numTrainingGames = 0;
 
-		return "Started training";
+		return "Started training, against Minimax: " + trainAgainstMinimax;
 	}
 
 	// Evaluates agent in players[0] and returns the score
@@ -221,7 +226,11 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 			}
 		}
 		
+		c4.printBoard();
+		
 		((TDLAgent)players[0]).isTraining = true;
+		
+		System.out.println("Agent achieved a score of " + score);
 		
 		return score;
 	}
@@ -241,6 +250,19 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 				String sPlayer = players[curPlayer].getName() + " ("
 						+ color[curPlayer] + ")";
 				makeCompleteMove(x, sPlayer);
+				
+				if (trainAgainstMinimax && state == State.TRAIN && curPlayer == 0) {
+					TDLAgent a = (TDLAgent) players[1];
+					a.setBoard(c4.getBoard());
+					a.setIndices(c4.getBoard(), ConnectFour.getMirroredField(c4.getBoard()), x);
+					double bestMoveValue = winner == 2 ? 1 - c4.countPieces()/100 : 0;
+					if (bestMoveValue == 0 && !c4.isDraw()) {
+						bestMoveValue = -1 * a.nextIndices[x].innerProduct(a.other.weights);
+						bestMoveValue = Math.tanh(bestMoveValue);
+					}
+					a.oneTDLIteration(x, bestMoveValue);
+				}
+				
 			}
 			else {
 				return;
@@ -268,27 +290,35 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 			numTrainingGames += 1;
 			while (numTrainingGames % evalInterval != 0) {
 				resetBoard();
-				if (numTrainingGames % 1000 == 0) {
+				if (numTrainingGames % 5000 == 0) {
 					System.out.println("Starting training game " + numTrainingGames);
 				}
 				playGame(true);
-				// give rewards to players if they lost or drew the game
+				/* give rewards to players if they lost or drew the game
 				if (curPlayer == 0 || !trainAgainstMinimax) {
-					int reward = -1;
-					if (winner == -1)
-						reward = 0;
 					TDLAgent a = ((TDLAgent)players[curPlayer]);
-					a.oneTDLIteration(a.lastMove, reward - a.lastDelta);
+					if (!a.lastWasRandom) {
+						int reward = -1;
+						if (winner == -1)
+							reward = 0;
+						
+						a.oneTDLIteration(a.lastMove, reward - a.lastDelta);
+					}
 				}
-				
+				*/
 				((TDLAgent)players[0]).updateAlpha();
 				if (!trainAgainstMinimax) {
 					((TDLAgent)players[1]).updateAlpha();
 				}
 				numTrainingGames += 1;
 			}
+			
+			c4.printBoard();
+			
 			System.out.println("Evaluating after game " + numTrainingGames);
 			state = State.TRAIN_EVAL;
+			System.out.println("Current alpha " + ((TDLAgent)players[0]).alpha);
+			System.out.println("Current epsilon " + ((TDLAgent)players[0]).epsilon);
 			
 			double score = evaluateAgent();
 			// write the output of each evaluation to a file

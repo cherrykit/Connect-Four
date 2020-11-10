@@ -11,13 +11,15 @@ public class TDLAgent extends ConnectFour implements Agent {
 	public int player; // 1 for first player, 2 for second player
 	public boolean trainAgainstMinimax;
 	public boolean isTraining;
-	private double epsilon = 0.1;
+	private double epsilonInit = 0.1;
+	public double epsilon = 0.1;
 	private double alphaInit;
-	private double alpha;
+	public double alpha;
 	private int numGames = 0;
 	public double lastDelta = 0;
 	public int lastMove;
 	public boolean lastWasRandom;
+	public TDLAgent other;
 	
 	// n-tuples
 	private int[][] nTuples = {
@@ -95,14 +97,17 @@ public class TDLAgent extends ConnectFour implements Agent {
 	// total of 4,456,448 weights
 	private int weightsPerTuple = 65536;
 	private int numWeights = 4456448;
-	private CompressedVector weights = new CompressedVector(numWeights);
+	public CompressedVector weights = new CompressedVector(numWeights);
 	
 	// initialize big arrays only once to save time
 	CompressedVector indices;
-	CompressedVector[] nextIndices = new CompressedVector[7];
+	public CompressedVector[] nextIndices = new CompressedVector[7];
 	
 	// will modify the indices field
-	private void setIndices(int[][] state1, int[][] state2, int index) {
+	public void setIndices(int[][] state1, int[][] state2, int index) {
+		
+		int[] colHeight = getColHeight();
+		
 		if (index == -1)
 			indices = new CompressedVector(numWeights);
 		else
@@ -118,13 +123,13 @@ public class TDLAgent extends ConnectFour implements Agent {
 				// determine what the value of that board space is in both states
 				if (state1[col][row] != 0) {
 					index1 += Math.pow(4, j) * state1[col][row];
-				} else if (getColHeight(col) + 1 == row) {
+				} else if (colHeight[col] == row) {
 					index1 += 3 * Math.pow(4, j);
 				}
 				
 				if (state2[col][row] != 0) {
 					index2 += Math.pow(4, j) * state2[col][row];
-				} else if (getColHeight(6 - col) + 1 == row) {
+				} else if (colHeight[6 - col] == row) {
 					index2 += 3 * Math.pow(4, j);
 				}
 			}
@@ -140,7 +145,8 @@ public class TDLAgent extends ConnectFour implements Agent {
 	
 	public void updateAlpha() {
 		numGames += 1;
-		alpha = 0.002 + (alphaInit - 0.002) * Math.exp(-0.0000005*numGames);
+		alpha = 0.001 + (alphaInit - 0.001) * Math.exp(-0.000005*numGames);
+		epsilon = 0.1 + (epsilonInit - 0.1) * Math.exp(-0.000005*numGames);
 	}
 	
 	// one iteration of TDL
@@ -162,14 +168,20 @@ public class TDLAgent extends ConnectFour implements Agent {
 		setIndices(boardState, mirroredState, -1);
 
 		//getting the value for the current board state
-		curValue = indices.innerProduct(weights);
+		curValue = 0;
+		VectorIterator indicesIt = indices.nonZeroIterator();
+		while (indicesIt.hasNext()) {
+			indicesIt.next();
+			int index = indicesIt.index();
+			curValue += weights.get(index);
+		}
 		curValue = Math.tanh(curValue);
 
 		//update weight array
 		double delta_t = bestMoveValue - curValue;
 		lastDelta = delta_t;
 		
-		VectorIterator indicesIt = nextIndices[bestMove].nonZeroIterator();
+		indicesIt = nextIndices[bestMove].nonZeroIterator();
 		while (indicesIt.hasNext()) {
 			indicesIt.next();
 			int index = indicesIt.index();
@@ -189,6 +201,7 @@ public class TDLAgent extends ConnectFour implements Agent {
 		this.player = player == 0 ? 1 : 2;
 		this.alphaInit = alphaInit;
 		this.alpha = alphaInit;
+		this.epsilonInit = epsilon;
 		this.epsilon = epsilon;
 	}
 
@@ -203,7 +216,7 @@ public class TDLAgent extends ConnectFour implements Agent {
 	@Override
 	public int getBestMove(int[][] table) {
 		setBoard(table);//initializing values
-		int[] possibleMoves = generateMoves(false);
+		int[] possibleMoves = generateMoves(player, false);
 		
 		if (isTraining) {
 			double e = ThreadLocalRandom.current().nextDouble();
@@ -225,7 +238,7 @@ public class TDLAgent extends ConnectFour implements Agent {
 			double value = 0;
 			
 			if (canWin(possibleMoves[i])) {
-				value = 1;
+				value = 1 - countPieces()/100;
 			}
 			
 			putPiece(possibleMoves[i]);
@@ -236,10 +249,13 @@ public class TDLAgent extends ConnectFour implements Agent {
 			setIndices(boardState, mirroredState, possibleMoves[i]);
 			
 			// calculate dot product for each
-			if (value == 0 && isDraw()) {
-				value = 0;
-			} else if (value == 0) {
-				value = nextIndices[possibleMoves[i]].innerProduct(weights);
+			if (value == 0 && !isDraw()) {
+				VectorIterator indicesIt = nextIndices[possibleMoves[i]].nonZeroIterator();
+				while (indicesIt.hasNext()) {
+					indicesIt.next();
+					int index = indicesIt.index();
+					value -= other.weights.get(index);
+				}
 				value = Math.tanh(value);
 			}
 			
@@ -253,6 +269,8 @@ public class TDLAgent extends ConnectFour implements Agent {
 		}
 		// return best one or call TDL iteration with the best one
 		lastMove = possibleMoves[bestIndex];
+		
+		//System.out.println("Player " + player + " best val " + bestValue);
 		
 		// call TDL instead when training, pass in the active weights vector as well
 		if (isTraining)
