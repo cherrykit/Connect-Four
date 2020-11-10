@@ -251,7 +251,7 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 						+ color[curPlayer] + ")";
 				makeCompleteMove(x, sPlayer);
 				
-				if (trainAgainstMinimax && state == State.TRAIN && curPlayer == 0) {
+				/*if (trainAgainstMinimax && state == State.TRAIN && curPlayer == 0) {
 					TDLAgent a = (TDLAgent) players[1];
 					a.setBoard(c4.getBoard());
 					a.setIndices(c4.getBoard(), ConnectFour.getMirroredField(c4.getBoard()), x);
@@ -261,7 +261,7 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 						bestMoveValue = Math.tanh(bestMoveValue);
 					}
 					a.oneTDLIteration(x, bestMoveValue);
-				}
+				} */
 				
 			}
 			else {
@@ -290,9 +290,6 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 			numTrainingGames += 1;
 			while (numTrainingGames % evalInterval != 0) {
 				resetBoard();
-				if (numTrainingGames % 5000 == 0) {
-					System.out.println("Starting training game " + numTrainingGames);
-				}
 				playGame(true);
 				/* give rewards to players if they lost or drew the game
 				if (curPlayer == 0 || !trainAgainstMinimax) {
