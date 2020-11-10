@@ -226,8 +226,6 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 			}
 		}
 		
-		c4.printBoard();
-		
 		((TDLAgent)players[0]).isTraining = true;
 		
 		System.out.println("Agent achieved a score of " + score);
@@ -309,8 +307,6 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 				}
 				numTrainingGames += 1;
 			}
-			
-			c4.printBoard();
 			
 			System.out.println("Evaluating after game " + numTrainingGames);
 			state = State.TRAIN_EVAL;
