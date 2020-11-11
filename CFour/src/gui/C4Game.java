@@ -95,7 +95,7 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 		// Until yet, there were no changes of the Options
 		alphaBetaStd = new AlphaBetaAgent(books);
 		alphaBetaStd.resetBoard();
-		alphaBetaStd.setTransPosSize(3);
+		alphaBetaStd.setTransPosSize(7);
 		alphaBetaStd.setBooks(true, false, true);
 		alphaBetaStd.setDifficulty(100);
 		alphaBetaStd.randomizeEqualMoves(true);
@@ -243,23 +243,27 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 		while (true) {
 			if (!gameOver) {
 				int x = players[curPlayer].getBestMove(c4.getBoard());
+				
+				if (trainAgainstMinimax && state == State.TRAIN && curPlayer == 2) {
+					TDLAgent a = (TDLAgent) players[1];
+					a.setBoard(c4.getBoard());
+					double bestMoveValue = a.canWin(curPlayer, x) ? 1 - c4.countPieces()/100 : 0;
+					a.putPiece(curPlayer, x);
+					int[] indices = a.getIndices(c4.getBoard(), ConnectFour.getMirroredField(c4.getBoard()));
+					if (bestMoveValue == 0 && !c4.isDraw()) {
+						for (int i = 0; i < indices.length; i++) {
+							bestMoveValue -= a.other.weights[indices[i]];
+						}
+						bestMoveValue = Math.tanh(bestMoveValue);
+					}
+					a.removePiece(curPlayer, x);
+					a.oneTDLIteration(x, bestMoveValue);
+				}
 
 				String[] color = { "Yellow", "Red", "Evaluation" };
 				String sPlayer = players[curPlayer].getName() + " ("
 						+ color[curPlayer] + ")";
 				makeCompleteMove(x, sPlayer);
-				
-				/*if (trainAgainstMinimax && state == State.TRAIN && curPlayer == 0) {
-					TDLAgent a = (TDLAgent) players[1];
-					a.setBoard(c4.getBoard());
-					a.setIndices(c4.getBoard(), ConnectFour.getMirroredField(c4.getBoard()), x);
-					double bestMoveValue = winner == 2 ? 1 - c4.countPieces()/100 : 0;
-					if (bestMoveValue == 0 && !c4.isDraw()) {
-						bestMoveValue = -1 * a.nextIndices[x].innerProduct(a.other.weights);
-						bestMoveValue = Math.tanh(bestMoveValue);
-					}
-					a.oneTDLIteration(x, bestMoveValue);
-				} */
 				
 			}
 			else {
@@ -289,6 +293,11 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 			while (numTrainingGames % evalInterval != 0) {
 				resetBoard();
 				playGame(true);
+				
+				if(numTrainingGames % 1000 == 0) {
+					System.out.println("Training game" + numTrainingGames);
+				}
+				
 				/* give rewards to players if they lost or drew the game
 				if (curPlayer == 0 || !trainAgainstMinimax) {
 					TDLAgent a = ((TDLAgent)players[curPlayer]);
