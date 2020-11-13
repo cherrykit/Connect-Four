@@ -321,8 +321,6 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 				resetBoard();
 				playGame(true);
 				
-				if (numTrainingGames % 1000 == 0)
-					System.out.println("Training game " + numTrainingGames);
 				
 				/*give rewards to players if they lost or drew the game
 				if (trainAgainstMinimax && curPlayer == 0) {
