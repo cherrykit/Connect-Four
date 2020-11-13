@@ -134,7 +134,7 @@ public class TDLAgent extends ConnectFour implements Agent {
 	
 	public void updateAlpha() {
 		numGames += 1;
-		alpha = 0.001 + (alphaInit - 0.001) * Math.exp(-0.000005*numGames);
+		alpha = 0.001 + (alphaInit - 0.001) * Math.exp(-0.0000005*numGames);
 		epsilon = 0.1 + (epsilonInit - 0.1) * Math.exp(-0.000005*numGames);
 	}
 	
@@ -226,7 +226,7 @@ public class TDLAgent extends ConnectFour implements Agent {
 			double value = 0;
 			
 			if (canWin(possibleMoves[i])) {
-				value = 1 - countPieces()/100.0;
+				value = 1 /*- countPieces()/100.0*/;
 				//System.out.println("Won: " + value + " " + countPieces());
 			}
 			
