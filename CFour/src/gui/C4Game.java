@@ -56,7 +56,7 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 	public AlphaBetaAgent alphaBetaStd = null;
 
 	// Players
-	protected Agent[] players = new Agent[3];
+	protected Agent[] players = new Agent[4];
 	private int curPlayer;
 	private int winner;
 	public boolean trainAgainstMinimax;
@@ -95,7 +95,7 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 		// Until yet, there were no changes of the Options
 		alphaBetaStd = new AlphaBetaAgent(books);
 		alphaBetaStd.resetBoard();
-		alphaBetaStd.setTransPosSize(7);
+		alphaBetaStd.setTransPosSize(3);
 		alphaBetaStd.setBooks(true, false, true);
 		alphaBetaStd.setDifficulty(100);
 		alphaBetaStd.randomizeEqualMoves(true);
@@ -158,7 +158,11 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 
 	// TODO: is there anywhere else we need to add support for players[2]?
 	private void swapPlayer() {
-		curPlayer = (state == State.TRAIN_EVAL || trainAgainstMinimax ? 2 : 1) - curPlayer;
+		if (trainAgainstMinimax && state == State.TRAIN) {
+			curPlayer = 3 - curPlayer;
+		} else {
+			curPlayer = (state == State.TRAIN_EVAL ? 2 : 1) - curPlayer;
+		}
 	}
 
 	protected void setInitialBoard() {
@@ -178,6 +182,15 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 	
 	protected Agent initTDLAgent(boolean trainAgainstMinimax) {
 		this.trainAgainstMinimax = trainAgainstMinimax;
+		if (trainAgainstMinimax) {
+			AlphaBetaAgent a = new AlphaBetaAgent(books);
+			a.resetBoard();
+			a.setTransPosSize(7);
+			a.setBooks(true, false, true);
+			a.setDifficulty(100);
+			a.randomizeEqualMoves(true);
+			players[3] = a;
+		}
 		return new TDLAgent(trainAgainstMinimax, false, 0, alpha, epsilon);
 	}
 	
@@ -185,12 +198,10 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 		TDLAgent curAgent = (TDLAgent) players[player];
 		// Init opponent
 
-		TDLAgent other = new TDLAgent(false, true, 1, alpha, epsilon);
+		TDLAgent other = new TDLAgent(false, !trainAgainstMinimax, 1, alpha, epsilon);
 		curAgent.other = other;
 		other.other = curAgent;
-		other.isTraining = true;
 		players[1] = other;
-		
 		players[2] = alphaBetaStd;
 		
 		curAgent.isTraining = true;
@@ -226,6 +237,8 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 			}
 		}
 		
+		c4.printBoard();
+		
 		((TDLAgent)players[0]).isTraining = true;
 		
 		System.out.println("Agent achieved a score of " + score);
@@ -242,9 +255,21 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 		}
 		while (true) {
 			if (!gameOver) {
-				int x = players[curPlayer].getBestMove(c4.getBoard());
+				int x = -1;
+				if (trainAgainstMinimax && curPlayer == 3) {
+					int[] colHeight = c4.getColHeight();
+					for (int i = 0; i < 7; i++) {
+						if (colHeight[i] < 6 && c4.canWin(2, i)) {
+							x = i;
+							break;
+						}
+					}
+				}
+				if (x == -1) {
+					x = players[curPlayer].getBestMove(c4.getBoard());
+				}
 				
-				if (trainAgainstMinimax && state == State.TRAIN && curPlayer == 2) {
+				/*if (trainAgainstMinimax && state == State.TRAIN && curPlayer == 3) {
 					TDLAgent a = (TDLAgent) players[1];
 					a.setBoard(c4.getBoard());
 					double bestMoveValue = a.canWin(curPlayer, x) ? 1 - c4.countPieces()/100 : 0;
@@ -258,15 +283,17 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 					}
 					a.removePiece(curPlayer, x);
 					a.oneTDLIteration(x, bestMoveValue);
-				}
+				}*/
 
-				String[] color = { "Yellow", "Red", "Evaluation" };
+				String[] color = { "Yellow", "Red", "Evaluation", "Minimax" };
 				String sPlayer = players[curPlayer].getName() + " ("
 						+ color[curPlayer] + ")";
 				makeCompleteMove(x, sPlayer);
 				
 			}
 			else {
+				//c4.printBoard();
+				//System.out.println("---------------");
 				return;
 			}
 		}
@@ -294,15 +321,14 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 				resetBoard();
 				playGame(true);
 				
-				if(numTrainingGames % 1000 == 0) {
-					System.out.println("Training game" + numTrainingGames);
-				}
+				if (numTrainingGames % 1000 == 0)
+					System.out.println("Training game " + numTrainingGames);
 				
-				/* give rewards to players if they lost or drew the game
-				if (curPlayer == 0 || !trainAgainstMinimax) {
+				/*give rewards to players if they lost or drew the game
+				if (trainAgainstMinimax && curPlayer == 0) {
 					TDLAgent a = ((TDLAgent)players[curPlayer]);
 					if (!a.lastWasRandom) {
-						int reward = -1;
+						int reward = -1 + c4.countPieces()/100;
 						if (winner == -1)
 							reward = 0;
 						
@@ -310,12 +336,15 @@ public class C4Game extends JPanel implements Runnable, ListOperation {
 					}
 				}
 				*/
+				
 				((TDLAgent)players[0]).updateAlpha();
 				if (!trainAgainstMinimax) {
 					((TDLAgent)players[1]).updateAlpha();
 				}
 				numTrainingGames += 1;
 			}
+			
+			c4.printBoard();
 			
 			System.out.println("Evaluating after game " + numTrainingGames);
 			state = State.TRAIN_EVAL;

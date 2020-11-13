@@ -16,6 +16,7 @@ public class TDLAgent extends ConnectFour implements Agent {
 	private int numGames = 0;
 	public double lastDelta = 0;
 	public int lastMove;
+	public double lastBestValue;
 	public boolean lastWasRandom;
 	public TDLAgent other;
 	
@@ -225,23 +226,29 @@ public class TDLAgent extends ConnectFour implements Agent {
 			double value = 0;
 			
 			if (canWin(possibleMoves[i])) {
-				value = 1 - countPieces()/100;
+				value = 1 - countPieces()/100.0;
+				//System.out.println("Won: " + value + " " + countPieces());
 			}
 			
 			putPiece(player, possibleMoves[i]);
 			
-			// start using this part
-			int[][] boardState = getBoard();
-			int[][] mirroredState = getMirroredField(boardState);
-			int[] indices = getIndices(boardState, mirroredState);
-			
-			// calculate dot product for each
 			if (value == 0 && !isDraw()) {
-				for (int j = 0; j < indices.length; j++) {
-					value -= other.weights[indices[j]];
+				if (trainAgainstMinimax) {
+					other.getBestMove(getBoard());
+					value = -1 * other.lastBestValue;
+				} else {
+					// start using this part
+					int[][] boardState = getBoard();
+					int[][] mirroredState = getMirroredField(boardState);
+					int[] indices = getIndices(boardState, mirroredState);
+					
+					// calculate dot product for each
+					for (int j = 0; j < indices.length; j++) {
+						value -= other.weights[indices[j]];
+					}
+					//System.out.println("Value before tan " + value);
+					value = Math.tanh(value);
 				}
-				//System.out.println("Value before tan " + value);
-				value = Math.tanh(value);
 			}
 			
 			if (value > bestValue) {
@@ -249,14 +256,17 @@ public class TDLAgent extends ConnectFour implements Agent {
 				bestIndex = i;
 			}
 			
+			
 			removePiece(player, possibleMoves[i]);
 			
 		}
 		
 		// return best one or call TDL iteration with the best one
 		lastMove = possibleMoves[bestIndex];
+		lastBestValue = bestValue;
 		
-		//System.out.println("Player " + player + " best val " + bestValue);
+		//if (player == 1)
+			//System.out.println("Player " + player + " best val " + bestValue);
 		
 		// call TDL instead when training, pass in the active weights vector as well
 		if (isTraining)
