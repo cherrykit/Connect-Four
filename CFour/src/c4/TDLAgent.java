@@ -5,22 +5,28 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class TDLAgent extends ConnectFour implements Agent {
 	
-	// Add parameters we will use
+	// Fields
+	
+	// What player is this agent for
 	public int player; // 1 for first player, 2 for second player
+	// Is this agent training against minimax?
 	public boolean trainAgainstMinimax;
+	// Is agent currently training?
 	public boolean isTraining;
+	// Initial and current value of epsilon
 	private double epsilonInit = 0.1;
 	public double epsilon = 0.1;
+	// Initial and current value of alpha
 	private double alphaInit;
 	public double alpha;
+	// Number of training games played
 	private int numGames = 0;
-	public double lastDelta = 0;
-	public int lastMove;
+	// Last best value found by agent
 	public double lastBestValue;
-	public boolean lastWasRandom;
+	// Agent corresponding to the other player in self-play
 	public TDLAgent other;
 	
-	// n-tuples
+	// n-tuples used
 	private int[][] nTuples = {
 			{0,6,7,12,13,14,19,21},
 			{1,3,4,6,7,8,9,10},
@@ -91,12 +97,33 @@ public class TDLAgent extends ConnectFour implements Agent {
 			{1,6,7,12,13,20,26,27},
 			{20,21,26,27,28,33,35,40}
 	};
-	// save weights as field here
+	
+	// agent weights
 	// we have 65536 weights for each tuple and 68 tuples
 	// total of 4,456,448 weights
 	private int weightsPerTuple = 65536;
 	private int numWeights = 4456448;
 	public double[] weights;
+	
+	
+	
+	/**
+	 * Constructor
+	 */
+	public TDLAgent(boolean againstMinimax, boolean isTraining, int player, double alphaInit, double epsilon) {
+		super();
+		trainAgainstMinimax = againstMinimax;
+		this.isTraining = isTraining;
+		this.player = player == 0 ? 1 : 2;
+		this.alphaInit = alphaInit;
+		this.alpha = alphaInit;
+		this.epsilonInit = epsilon;
+		this.epsilon = epsilon;
+		
+		this.weights = new double[numWeights];
+		Arrays.fill(weights, 0);
+	}
+	
 	
 	// will modify the indices field
 	public int[] getIndices(int[][] state1, int[][] state2) {
@@ -138,14 +165,7 @@ public class TDLAgent extends ConnectFour implements Agent {
 		epsilon = 0.1 + (epsilonInit - 0.1) * Math.exp(-0.000005*numGames);
 	}
 	
-	// one iteration of TDL
-	// Darrel: implement this
-	// bestMove is the column that is best according to the current weights
-	// activeWeights is the vector x_t in the pseudocode when the next move is bestMove
-	// bestMoveValue is the value (r(s_{t+1}) + V(s_{t+1})) of the state resulting from bestMove
-	// check the getBestMove method for how to get the value of the current state 
-	// (between my start and end comments, the correct state should already be initialized)
-	// should modify the weights
+	// one iteration of TDL. Updates current agents weights
 	public int oneTDLIteration(int bestMove, double bestMoveValue) {
 		
 		//already checked that do not take random move
@@ -165,7 +185,6 @@ public class TDLAgent extends ConnectFour implements Agent {
 
 		//update weight array
 		double delta_t = bestMoveValue - curValue;
-		lastDelta = delta_t;
 		
 		double change = alpha * delta_t * (1.0 - Math.pow(curValue, 2));
 		
@@ -176,31 +195,11 @@ public class TDLAgent extends ConnectFour implements Agent {
 		return bestMove;
 	}	
 	
-	/**
-	 * Generate an empty Board
-	 */
-	public TDLAgent(boolean againstMinimax, boolean isTraining, int player, double alphaInit, double epsilon) {
-		super();
-		trainAgainstMinimax = againstMinimax;
-		this.isTraining = isTraining;
-		this.player = player == 0 ? 1 : 2;
-		this.alphaInit = alphaInit;
-		this.alpha = alphaInit;
-		this.epsilonInit = epsilon;
-		this.epsilon = epsilon;
-		
-		this.weights = new double[numWeights];
-		Arrays.fill(weights, 0);
-	}
-
 	public String getName() {
 		return new String("TDL-Agent");
 	}
 
-	// Sophia: Need to implement this
-	// first index of table is the row, from bottom of board to the top
-	// second index of table is the column, from left to right
-	// value is 1 for yellow (first) player, 2 for red (second) player and 0 for empty spaces
+	// Determines the best move for the agent based on the current weights of both TDL agents
 	@Override
 	public int getBestMove(int[][] table) {
 		setBoard(table);//initializing values
@@ -210,11 +209,9 @@ public class TDLAgent extends ConnectFour implements Agent {
 			double e = ThreadLocalRandom.current().nextDouble();
 			// take random move
 			if (e < epsilon){
-				lastWasRandom = true;
 				int randomMove = ThreadLocalRandom.current().nextInt(0,possibleMoves.length);
 				return possibleMoves[randomMove];
 			}
-			lastWasRandom = false;
 		}
 		
 		double bestValue = -100;
@@ -227,7 +224,6 @@ public class TDLAgent extends ConnectFour implements Agent {
 			
 			if (canWin(possibleMoves[i])) {
 				value = 1 /*- countPieces()/100.0*/;
-				//System.out.println("Won: " + value + " " + countPieces());
 			}
 			
 			putPiece(player, possibleMoves[i]);
@@ -246,7 +242,6 @@ public class TDLAgent extends ConnectFour implements Agent {
 					for (int j = 0; j < indices.length; j++) {
 						value -= other.weights[indices[j]];
 					}
-					//System.out.println("Value before tan " + value);
 					value = Math.tanh(value);
 				}
 			}
@@ -261,25 +256,21 @@ public class TDLAgent extends ConnectFour implements Agent {
 			
 		}
 		
-		// return best one or call TDL iteration with the best one
-		lastMove = possibleMoves[bestIndex];
+		// last best value
 		lastBestValue = bestValue;
 		
-		//if (player == 1)
-			//System.out.println("Player " + player + " best val " + bestValue);
-		
-		// call TDL instead when training, pass in the active weights vector as well
+		// call TDL when training, otherwise return best move directly
 		if (isTraining)
 			return oneTDLIteration(possibleMoves[bestIndex], bestValue);
 		return possibleMoves[bestIndex];
 	}
 	
 	// Don't need this yet
-		@Override
-		public AgentState getAgentState() {
-			// TODO Auto-generated method stub
-			return null;
-		}
+	@Override
+	public AgentState getAgentState() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 	// Don't need this
 	@Override
