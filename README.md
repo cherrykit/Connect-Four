@@ -14,4 +14,17 @@ java -jar c4console.jar trainAgainstMinimax alpha epsilon
 
 The program generates the file results.csv, which includes the score of the TDL agent measured after every 25000 training games. The score is a value between 0 and 100 that is determined over 100 evaluation games against the Minimax agent. Since the Minimax agent can force a win if it goes first, the TDL agent goes first and the Minimax agent go second. For each game, the TDL agent is awarded 1 point for a win, 0.5 points for a draw, and 0 points for a loss.
 
-Sample results and graphs can be found under the "Results" folder.
+# Results
+## Comparison of training through self-play vs training against optimal agent
+![graph1](/Results/GraphMinimax.jpg)
+
+## Comparison of different initial values of alpha
+![graph2](/Results/GraphAlpha.jpg)
+
+## Comparison of different alpha decay schemes
+![graph3](/Results/GraphAlphaDecay.jpg)
+
+## Comparison of different initial values of epsilon
+![graph4](/Results/GraphEpsilon.jpg)
+
+More sample results and graphs can be found under the "Results" folder.
