@@ -290,6 +290,8 @@ public class C4Game extends JPanel implements Runnable {
 
 	public void run() {
 		System.out.println("Started training!");
+		((TDLAgent)players[0]).saveAgent(numTrainingGames);
+		((TDLAgent)players[1]).saveAgent(numTrainingGames + 1);
 		while (true) {
 			state = State.TRAIN;
 			numTrainingGames += 1;
@@ -302,6 +304,11 @@ public class C4Game extends JPanel implements Runnable {
 					((TDLAgent)players[1]).updateAlpha();
 				}
 				numTrainingGames += 1;
+			}
+			
+			if (numTrainingGames % 1000000 == 0) {
+				((TDLAgent)players[0]).saveAgent(numTrainingGames);
+				((TDLAgent)players[1]).saveAgent(numTrainingGames + 1);
 			}
 			
 			c4.printBoard();
@@ -326,6 +333,8 @@ public class C4Game extends JPanel implements Runnable {
 				
 			if (score >= targetScore && score <= prevScore1 && score <= prevScore2){
 				System.out.println("Finished training!");
+				((TDLAgent)players[0]).saveAgent(numTrainingGames);
+				((TDLAgent)players[1]).saveAgent(numTrainingGames + 1);
 				return;
 			}
 			prevScore1 = prevScore2;

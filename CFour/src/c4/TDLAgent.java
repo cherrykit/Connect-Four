@@ -1,5 +1,7 @@
 package c4;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -161,7 +163,7 @@ public class TDLAgent extends ConnectFour implements Agent {
 	
 	public void updateAlpha() {
 		numGames += 1;
-		alpha = 0.001 + (alphaInit - 0.001) * Math.exp(-0.0000005*numGames);
+		alpha = 0.001 + (alphaInit - 0.001) * Math.exp(-0.000005*numGames);
 		epsilon = 0.1 + (epsilonInit - 0.1) * Math.exp(-0.000005*numGames);
 	}
 	
@@ -263,6 +265,21 @@ public class TDLAgent extends ConnectFour implements Agent {
 		if (isTraining)
 			return oneTDLIteration(possibleMoves[bestIndex], bestValue);
 		return possibleMoves[bestIndex];
+	}
+	
+	public void saveAgent(int fileEnd) {
+		try {
+			FileWriter out = new FileWriter("weights" + fileEnd + ".txt", true);
+			out.append(numWeights + "\n");
+			for(int i = 0; i < numWeights; i++) {
+				out.append(weights[i] + "\n");
+			}
+			out.flush();
+			out.close();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 	}
 	
 	// Don't need this yet
